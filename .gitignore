@@ -1,0 +1,32 @@
+# Build output
+build/
+out/
+dist/
+
+# Downloaded packaging tools (linuxdeploy etc.) -- fetched on demand by
+# packaging/linux/build-appimage.sh, not vendored.
+packaging/linux/tools/*.AppImage
+packaging/linux/tools/linuxdeploy-plugin-qt
+
+# CMake
+CMakeUserPresets.json
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+compile_commands.json
+
+# Qt Creator
+*.autosave
+CMakeLists.txt.user
+CMakeLists.txt.user.*
+
+# Visual Studio / VS Code
+.vs/
+.vscode/
+*.sln
+*.vcxproj*
+
+# OS cruft
+Thumbs.db
+.DS_Store

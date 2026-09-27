@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/branding">
+        <file alias="logo_lvd.png">../../resources/branding/logo_lvd.png</file>
+    </qresource>
+    <qresource prefix="/license">
+        <file alias="LICENSE">../../LICENSE</file>
+    </qresource>
+</RCC>
