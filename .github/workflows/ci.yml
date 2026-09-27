@@ -16,7 +16,13 @@ jobs:
         with:
           version: "6.8.*"
           arch: win64_msvc2022_64
-          modules: "qttools"
+          # No explicit "qttools" module: aqtinstall now bundles
+          # Qt6LinguistTools (lupdate/lrelease) into the base install by
+          # default for recent Qt versions, and asking for a module that
+          # no longer exists as a separate package aborts the whole
+          # install rather than just warning (confirmed directly: this
+          # broke both CI jobs, and separately while fetching Qt 6.11.1
+          # for a from-scratch Ubuntu 20.04 build -- see PLAN.md item 13).
 
       - name: Set up MSVC environment
         uses: ilammy/msvc-dev-cmd@v1
@@ -41,12 +47,11 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: "6.8.*"
-          # qttools: Qt6LinguistTools CMake package (see the Windows job's
-          # comment). Qt6::DBus (used by platform/linux/linuxplatformshell.cpp)
-          # is expected to ship as part of aqtinstall's base qtbase archive;
-          # if a future Qt version splits it out, this is the first place
-          # to add a module for it.
-          modules: "qttools"
+          # No explicit "qttools" module -- see the Windows job's comment.
+          # Qt6::DBus (used by platform/linux/linuxplatformshell.cpp) is
+          # expected to ship as part of aqtinstall's base qtbase archive;
+          # if a future Qt version splits either back out into its own
+          # module, this is the first place to add it back.
 
       - name: Install Ninja
         run: sudo apt-get update && sudo apt-get install -y ninja-build
