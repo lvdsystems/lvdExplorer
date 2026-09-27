@@ -64,3 +64,11 @@ jobs:
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
+        env:
+          # ubuntu-latest has no X server at all -- the tests that need a
+          # real QApplication (anything not using QTEST_GUILESS_MAIN, e.g.
+          # they touch QAction/QClipboard/QMessageBox/QFileIconProvider)
+          # fail with "could not connect to display" without this. Qt's
+          # offscreen platform plugin is built specifically for exactly
+          # this: headless CI runs of real widget-based tests.
+          QT_QPA_PLATFORM: offscreen
