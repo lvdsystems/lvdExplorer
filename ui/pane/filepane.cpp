@@ -1,5 +1,6 @@
 #include "ui/pane/filepane.h"
 
+#include "core/fsmodel/drivelisttask.h"
 #include "core/fsmodel/filesystemmodel.h"
 #include "core/ops/fileophandle.h"
 #include "core/ops/fileoprequest.h"
@@ -32,6 +33,7 @@
 #include <QPointer>
 #include <QStorageInfo>
 #include <QStyle>
+#include <QThreadPool>
 #include <QToolBar>
 #include <QToolButton>
 #include <QToolTip>
@@ -57,7 +59,15 @@ FilePane::FilePane(QWidget *parent)
     m_view->sortByColumn(FileSystemModel::NameColumn, Qt::AscendingOrder);
     m_view->setEditTriggers(QAbstractItemView::EditKeyPressed | QAbstractItemView::SelectedClicked);
     m_view->setContextMenuPolicy(Qt::CustomContextMenu);
-    m_view->header()->setSectionResizeMode(FileSystemModel::NameColumn, QHeaderView::Stretch);
+    // Every column user-resizable (Stretch forbids manual resizing, and
+    // QTreeView defaults to stretching the last section -- both disabled
+    // so Name/Size/Type/Date modified all behave the same way).
+    m_view->header()->setSectionResizeMode(QHeaderView::Interactive);
+    m_view->header()->setStretchLastSection(false);
+    m_view->header()->resizeSection(FileSystemModel::NameColumn, 240);
+    m_view->header()->resizeSection(FileSystemModel::SizeColumn, 90);
+    m_view->header()->resizeSection(FileSystemModel::TypeColumn, 110);
+    m_view->header()->resizeSection(FileSystemModel::ModifiedColumn, 150);
     m_view->setDragEnabled(true);
     m_view->setAcceptDrops(true);
     m_view->setDropIndicatorShown(true);
@@ -134,17 +144,29 @@ FilePane::FilePane(QWidget *parent)
     drivesButton->setPopupMode(QToolButton::InstantPopup);
     auto *drivesMenu = new QMenu(drivesButton);
     connect(drivesMenu, &QMenu::aboutToShow, this, [this, drivesMenu] {
+        // Populated asynchronously via DriveListTask: QStorageInfo's own
+        // isReady()/displayName() calls can block for a long network
+        // timeout when a mapped drive points at a currently-unreachable
+        // share, which used to freeze the whole app the moment this menu
+        // was opened. Shows a placeholder immediately and fills in the
+        // real list once the background scan reports back instead.
         drivesMenu->clear();
-        for (const QStorageInfo &volume : QStorageInfo::mountedVolumes()) {
-            if (!volume.isValid() || !volume.isReady())
-                continue;
-            const QString root = volume.rootPath();
-            QString label = QDir::toNativeSeparators(root);
-            if (!volume.displayName().isEmpty() && volume.displayName() != label)
-                label = tr("%1 (%2)").arg(volume.displayName(), label);
-            QAction *action = drivesMenu->addAction(label);
-            connect(action, &QAction::triggered, this, [this, root] { navigateTo(root); });
-        }
+        QAction *loadingAction = drivesMenu->addAction(tr("Loading…"));
+        loadingAction->setEnabled(false);
+
+        auto *task = new DriveListTask;
+        connect(task, &DriveListTask::finished, this, [this, drivesMenu](const QVector<DriveEntry> &drives) {
+            drivesMenu->clear();
+            if (drives.isEmpty()) {
+                drivesMenu->addAction(tr("No drives found"))->setEnabled(false);
+                return;
+            }
+            for (const DriveEntry &drive : drives) {
+                QAction *action = drivesMenu->addAction(drive.label);
+                connect(action, &QAction::triggered, this, [this, path = drive.rootPath] { navigateTo(path); });
+            }
+        });
+        QThreadPool::globalInstance()->start(task);
     });
     drivesButton->setMenu(drivesMenu);
     toolBar->addWidget(drivesButton);
@@ -633,8 +655,14 @@ TabSessionState FilePane::captureState() const
 void FilePane::applyState(const TabSessionState &state)
 {
     navigateTo(state.path);
-    if (!state.headerState.isEmpty())
+    if (!state.headerState.isEmpty()) {
         m_view->header()->restoreState(state.headerState);
+        // A session saved before columns became freely resizable may have
+        // restored the old Stretch-on-Name/stretch-last-section setup;
+        // reassert Interactive so a stale save can't silently undo the fix.
+        m_view->header()->setSectionResizeMode(QHeaderView::Interactive);
+        m_view->header()->setStretchLastSection(false);
+    }
     setReadOnly(state.readOnly);
 }
 

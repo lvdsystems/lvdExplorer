@@ -121,6 +121,12 @@ void PaneGridWidget::rebuild()
         auto *splitter = new QSplitter(Qt::Horizontal);
         splitter->addWidget(m_containers.at(0));
         splitter->addWidget(m_containers.at(1));
+        // Equal values here are proportions, not pixels -- QSplitter scales
+        // them to fit whatever width it ends up with, so this is an exact
+        // 50/50 split regardless of the window's actual size, rather than
+        // leaving it to QSplitter's default size-hint-based distribution
+        // (which is rarely actually even).
+        splitter->setSizes({1, 1});
         newRoot = splitter;
         break;
     }
@@ -128,19 +134,26 @@ void PaneGridWidget::rebuild()
         auto *splitter = new QSplitter(Qt::Vertical);
         splitter->addWidget(m_containers.at(0));
         splitter->addWidget(m_containers.at(1));
+        splitter->setSizes({1, 1});
         newRoot = splitter;
         break;
     }
     case GridLayoutMode::FourPanes: {
+        // Even split on *both* axes: each inner splitter divides its row
+        // 50/50, and the outer splitter divides top/bottom 50/50, so every
+        // quadrant ends up the same size.
         auto *topSplit = new QSplitter(Qt::Horizontal);
         topSplit->addWidget(m_containers.at(0));
         topSplit->addWidget(m_containers.at(1));
+        topSplit->setSizes({1, 1});
         auto *bottomSplit = new QSplitter(Qt::Horizontal);
         bottomSplit->addWidget(m_containers.at(2));
         bottomSplit->addWidget(m_containers.at(3));
+        bottomSplit->setSizes({1, 1});
         auto *outer = new QSplitter(Qt::Vertical);
         outer->addWidget(topSplit);
         outer->addWidget(bottomSplit);
+        outer->setSizes({1, 1});
         newRoot = outer;
         break;
     }

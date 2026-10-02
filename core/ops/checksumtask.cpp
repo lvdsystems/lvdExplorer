@@ -1,11 +1,20 @@
 #include "core/ops/checksumtask.h"
 
 #include <QCryptographicHash>
+#include <QDir>
+#include <QDirIterator>
 #include <QFile>
+#include <QFileInfo>
 
 namespace {
 constexpr qint64 kChunkSize = 1 << 20; // 1 MiB
-}
+
+struct PendingFile
+{
+    QString absolutePath;
+    QString displayName;
+};
+} // namespace
 
 ChecksumTask::ChecksumTask(QStringList paths, QSharedPointer<QAtomicInt> cancelled)
     : m_paths(std::move(paths))
@@ -18,16 +27,50 @@ void ChecksumTask::run()
 {
     bool wasCancelled = false;
 
-    for (const QString &path : m_paths) {
+    // Expand any directories in the selection into the files they
+    // contain, recursively -- a folder used to just come back as
+    // "(error)" since QFile can't open a directory for reading.
+    QVector<PendingFile> files;
+    for (const QString &selectedPath : m_paths) {
         if (m_cancelled->loadRelaxed() != 0) {
             wasCancelled = true;
             break;
         }
 
-        ChecksumResult result;
-        result.path = path;
+        const QFileInfo info(selectedPath);
+        if (info.isDir()) {
+            const QDir baseDir(info.absoluteFilePath());
+            const QString folderName = info.fileName();
+            QDirIterator it(info.absoluteFilePath(), QDir::Files | QDir::NoDotAndDotDot,
+                             QDirIterator::Subdirectories);
+            while (it.hasNext()) {
+                if (m_cancelled->loadRelaxed() != 0) {
+                    wasCancelled = true;
+                    break;
+                }
+                const QString filePath = it.next();
+                const QString relative = baseDir.relativeFilePath(filePath);
+                files.append({filePath, folderName + QLatin1Char('/') + relative});
+            }
+        } else {
+            files.append({info.absoluteFilePath(), info.fileName()});
+        }
 
-        QFile file(path);
+        if (wasCancelled)
+            break;
+    }
+
+    for (const PendingFile &pending : std::as_const(files)) {
+        if (wasCancelled || m_cancelled->loadRelaxed() != 0) {
+            wasCancelled = true;
+            break;
+        }
+
+        ChecksumResult result;
+        result.path = pending.absolutePath;
+        result.displayName = pending.displayName;
+
+        QFile file(pending.absolutePath);
         if (!file.open(QIODevice::ReadOnly)) {
             emit resultReady(result); // ok stays false -- reported as a failure
             continue;

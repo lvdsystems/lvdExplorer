@@ -13,11 +13,8 @@
   <a href="https://www.lvdsystems.eu">www.lvdsystems.eu</a>
 </p>
 
-> **Screenshot below is a placeholder** — a real one (from an actual
-> browsing session, current theme) should replace it before this repo
-> goes public.
-
 ![lvdExplorer screenshot](docs/screenshot.png)
+![lvdExplorer screenshot](docs/screenshot2.png)
 
 ## Features
 
@@ -48,6 +45,8 @@
 - **Ships two ways** — a portable `.zip`/Inno Setup installer on Windows,
   an AppImage on Linux.
 - **GPLv3, no telemetry, no accounts.**
+
+![lvdExplorer screenshot](docs/screenshot3.png)
 
 ## Building
 

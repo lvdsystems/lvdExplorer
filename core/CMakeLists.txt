@@ -1,6 +1,8 @@
 add_library(lvdCore STATIC
     fsmodel/directoryscantask.h
     fsmodel/directoryscantask.cpp
+    fsmodel/drivelisttask.h
+    fsmodel/drivelisttask.cpp
     fsmodel/filesystemmodel.h
     fsmodel/filesystemmodel.cpp
     ops/fileoprequest.h

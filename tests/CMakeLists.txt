@@ -27,3 +27,11 @@ add_test(NAME ContentSearchTest COMMAND contentsearchtest)
 qt_add_executable(filesystemmodeltest filesystemmodeltest.cpp)
 target_link_libraries(filesystemmodeltest PRIVATE lvdCore Qt6::Test)
 add_test(NAME FileSystemModelTest COMMAND filesystemmodeltest)
+
+qt_add_executable(drivelisttasktest drivelisttasktest.cpp)
+target_link_libraries(drivelisttasktest PRIVATE lvdCore Qt6::Test)
+add_test(NAME DriveListTaskTest COMMAND drivelisttasktest)
+
+qt_add_executable(checksumtasktest checksumtasktest.cpp)
+target_link_libraries(checksumtasktest PRIVATE lvdCore Qt6::Test)
+add_test(NAME ChecksumTaskTest COMMAND checksumtasktest)
