@@ -1,0 +1,11 @@
+{
+  "name": "lvdexplorer",
+  "version-string": "0.3.0",
+  "dependencies": [
+    {
+      "name": "libarchive",
+      "default-features": false,
+      "features": ["lzma", "bzip2", "zstd", "lz4"]
+    }
+  ]
+}
