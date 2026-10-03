@@ -29,8 +29,10 @@ jobs:
         with:
           arch: x64
 
+      # libarchive comes from vcpkg manifest mode (vcpkg.json at the repo
+      # root), installed by CMake through the runner's preinstalled vcpkg.
       - name: Configure
-        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="$env:VCPKG_INSTALLATION_ROOT/scripts/buildsystems/vcpkg.cmake"
 
       - name: Build
         run: cmake --build build
@@ -53,8 +55,8 @@ jobs:
           # if a future Qt version splits either back out into its own
           # module, this is the first place to add it back.
 
-      - name: Install Ninja
-        run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - name: Install Ninja and libarchive
+        run: sudo apt-get update && sudo apt-get install -y ninja-build libarchive-dev
 
       - name: Configure
         run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
