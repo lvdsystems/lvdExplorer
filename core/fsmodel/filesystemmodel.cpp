@@ -1,5 +1,8 @@
 #include "core/fsmodel/filesystemmodel.h"
 
+#include "core/archive/archivereader.h"
+#include "core/fsmodel/archivescantask.h"
+
 #include <QDir>
 #include <QFileInfo>
 #include <QFileSystemWatcher>
@@ -51,7 +54,25 @@ FileSystemModel::FileSystemModel(QObject *parent)
     m_refreshDebounce = new QTimer(this);
     m_refreshDebounce->setSingleShot(true);
     m_refreshDebounce->setInterval(kAutoRefreshDebounceMs);
-    connect(m_refreshDebounce, &QTimer::timeout, this, &FileSystemModel::refresh);
+    connect(m_refreshDebounce, &QTimer::timeout, this, &FileSystemModel::onAutoRefreshTimeout);
+}
+
+void FileSystemModel::setAutoRefreshSuspended(bool suspended)
+{
+    m_autoRefreshSuspended = suspended;
+    if (!suspended && m_autoRefreshPending) {
+        m_autoRefreshPending = false;
+        scheduleAutoRefresh();
+    }
+}
+
+void FileSystemModel::onAutoRefreshTimeout()
+{
+    if (m_autoRefreshSuspended) {
+        m_autoRefreshPending = true;
+        return;
+    }
+    refresh();
 }
 
 void FileSystemModel::setRootPath(const QString &path)
@@ -74,6 +95,11 @@ void FileSystemModel::startScan()
     if (m_cancelFlag)
         m_cancelFlag->storeRelaxed(1);
 
+    // Every scan resets the view, which ends any inline edit in progress, so
+    // there's nothing left to protect from a rescan once one starts.
+    m_autoRefreshSuspended = false;
+
+    emit scanAboutToStart();
     beginResetModel();
     m_entries.clear();
     m_visibleRows.clear();
@@ -83,6 +109,20 @@ void FileSystemModel::startScan()
     m_cancelFlag = QSharedPointer<QAtomicInt>::create(0);
 
     emit scanStarted();
+
+    QString archivePath;
+    QString innerPath;
+    if (ArchiveReader::splitArchivePath(m_rootPath, &archivePath, &innerPath)) {
+        auto *task = new ArchiveScanTask(archivePath, innerPath, m_generation, m_cancelFlag);
+        connect(task, &ArchiveScanTask::batchReady, this, &FileSystemModel::handleBatchReady);
+        connect(task, &ArchiveScanTask::failed, this, [this](int generation, const QString &message) {
+            if (generation == m_generation)
+                emit errorOccurred(message);
+        });
+        connect(task, &ArchiveScanTask::finished, this, &FileSystemModel::handleScanFinished);
+        QThreadPool::globalInstance()->start(task);
+        return;
+    }
 
     auto *task = new DirectoryScanTask(m_rootPath, m_generation, m_cancelFlag);
     connect(task, &DirectoryScanTask::batchReady, this, &FileSystemModel::handleBatchReady);
@@ -100,7 +140,7 @@ void FileSystemModel::watchRootDirectory()
     const QStringList currentDirs = m_watcher->directories();
     if (!currentDirs.isEmpty())
         m_watcher->removePaths(currentDirs);
-    if (!m_rootPath.isEmpty())
+    if (!m_rootPath.isEmpty() && !ArchiveReader::splitArchivePath(m_rootPath, nullptr, nullptr))
         m_watcher->addPath(m_rootPath);
 }
 
@@ -111,7 +151,7 @@ void FileSystemModel::syncWatchedEntries()
     // (its size/date changing with no rename) is only guaranteed to be
     // reported by watching that file directly -- hence both.
     QStringList desired;
-    if (m_entries.size() <= kMaxWatchedEntries) {
+    if (m_entries.size() <= kMaxWatchedEntries && !ArchiveReader::splitArchivePath(m_rootPath, nullptr, nullptr)) {
         desired.reserve(m_entries.size());
         for (const auto &entry : std::as_const(m_entries))
             desired.append(entry.absolutePath);

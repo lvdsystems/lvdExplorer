@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
 
 project(lvdExplorer
-    VERSION 0.2.0
+    VERSION 0.3.0
     DESCRIPTION "Open-source Qt6 multi-pane file manager"
     LANGUAGES CXX
 )

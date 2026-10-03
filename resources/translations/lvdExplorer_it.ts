@@ -240,280 +240,313 @@
 <context>
     <name>FilePane</name>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="77"/>
+        <location filename="../../ui/pane/filepane.cpp" line="109"/>
         <source>Filter this folder…</source>
         <translation>Filtra questa cartella…</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="80"/>
+        <location filename="../../ui/pane/filepane.cpp" line="112"/>
         <source>Regex</source>
         <translation>Regex</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="81"/>
+        <location filename="../../ui/pane/filepane.cpp" line="113"/>
         <source>Treat the filter text as a regular expression instead of plain substring.</source>
         <translation>Tratta il testo del filtro come un&apos;espressione regolare invece di una semplice sottostringa.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="88"/>
+        <location filename="../../ui/pane/filepane.cpp" line="120"/>
         <source>Back</source>
         <translation>Indietro</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="89"/>
+        <location filename="../../ui/pane/filepane.cpp" line="121"/>
         <source>Forward</source>
         <translation>Avanti</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="90"/>
+        <location filename="../../ui/pane/filepane.cpp" line="122"/>
+        <location filename="../../ui/pane/filepane.cpp" line="151"/>
         <source>Up</source>
         <translation>Su</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="91"/>
+        <location filename="../../ui/pane/filepane.cpp" line="123"/>
         <source>Refresh</source>
         <translation>Aggiorna</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="105"/>
+        <location filename="../../ui/pane/filepane.cpp" line="137"/>
         <source>Pane: Back</source>
         <translation>Pannello: Indietro</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="107"/>
+        <location filename="../../ui/pane/filepane.cpp" line="139"/>
         <source>Pane: Forward</source>
         <translation>Pannello: Avanti</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="109"/>
+        <location filename="../../ui/pane/filepane.cpp" line="141"/>
         <source>Pane: Up</source>
         <translation>Pannello: Su</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="111"/>
+        <location filename="../../ui/pane/filepane.cpp" line="143"/>
         <source>Pane: Refresh</source>
         <translation>Pannello: Aggiorna</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="120"/>
-        <location filename="../../ui/pane/filepane.cpp" line="360"/>
-        <location filename="../../ui/pane/filepane.cpp" line="430"/>
-        <location filename="../../ui/pane/filepane.cpp" line="439"/>
+        <location filename="../../ui/pane/filepane.cpp" line="159"/>
+        <location filename="../../ui/pane/filepane.cpp" line="424"/>
+        <location filename="../../ui/pane/filepane.cpp" line="502"/>
+        <location filename="../../ui/pane/filepane.cpp" line="511"/>
         <source>New Folder</source>
         <translation>Nuova cartella</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="124"/>
+        <location filename="../../ui/pane/filepane.cpp" line="163"/>
         <source>Pane: New Folder</source>
         <translation>Pannello: Nuova cartella</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="133"/>
+        <location filename="../../ui/pane/filepane.cpp" line="172"/>
         <source>Drives</source>
         <translation>Unità</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="135"/>
+        <location filename="../../ui/pane/filepane.cpp" line="174"/>
         <source>Jump to a drive or volume</source>
         <translation>Vai a un&apos;unità o volume</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="436"/>
+        <location filename="../../ui/pane/filepane.cpp" line="508"/>
         <source>%1 (%2)</source>
         <translation>%1 (%2)</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="167"/>
+        <location filename="../../ui/pane/filepane.cpp" line="206"/>
         <source>Read-only</source>
         <translation>Sola lettura</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="146"/>
+        <location filename="../../ui/pane/filepane.cpp" line="154"/>
+        <source>Pane: Up (Backspace)</source>
+        <translation>Pannello: Su (Backspace)</translation>
+    </message>
+    <message>
+        <location filename="../../ui/pane/filepane.cpp" line="185"/>
         <source>Loading…</source>
         <translation>Caricamento…</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="153"/>
+        <location filename="../../ui/pane/filepane.cpp" line="192"/>
         <source>No drives found</source>
         <translation>Nessuna unità trovata</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="169"/>
+        <location filename="../../ui/pane/filepane.cpp" line="208"/>
         <source>Blocks delete, rename, and move operations in this pane (§10). Copying into it is still allowed.</source>
         <translation>Blocca le operazioni di eliminazione, rinomina e spostamento in questo pannello (§10). La copia al suo interno resta consentita.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="190"/>
-        <location filename="../../ui/pane/filepane.cpp" line="243"/>
+        <location filename="../../ui/pane/filepane.cpp" line="229"/>
+        <location filename="../../ui/pane/filepane.cpp" line="288"/>
+        <location filename="../../ui/pane/filepane.cpp" line="698"/>
+        <location filename="../../ui/pane/filepane.cpp" line="722"/>
         <source>lvdExplorer</source>
         <translation>lvdExplorer</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="193"/>
-        <location filename="../../ui/pane/filepane.cpp" line="392"/>
-        <location filename="../../ui/pane/filepane.cpp" line="522"/>
+        <location filename="../../ui/pane/filepane.cpp" line="237"/>
+        <location filename="../../ui/pane/filepane.cpp" line="459"/>
+        <location filename="../../ui/pane/filepane.cpp" line="635"/>
         <source>Delete</source>
         <translation>Elimina</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="195"/>
+        <location filename="../../ui/pane/filepane.cpp" line="239"/>
         <source>Pane: Delete</source>
         <translation>Pannello: Elimina</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="200"/>
-        <location filename="../../ui/pane/filepane.cpp" line="371"/>
+        <location filename="../../ui/pane/filepane.cpp" line="244"/>
+        <location filename="../../ui/pane/filepane.cpp" line="436"/>
         <source>Rename</source>
         <translation>Rinomina</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="202"/>
+        <location filename="../../ui/pane/filepane.cpp" line="246"/>
         <source>Pane: Rename</source>
         <translation>Pannello: Rinomina</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="212"/>
-        <location filename="../../ui/pane/filepane.cpp" line="376"/>
+        <location filename="../../ui/pane/filepane.cpp" line="256"/>
+        <location filename="../../ui/pane/filepane.cpp" line="441"/>
         <source>Cut</source>
         <translation>Taglia</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="214"/>
+        <location filename="../../ui/pane/filepane.cpp" line="258"/>
         <source>Pane: Cut</source>
         <translation>Pannello: Taglia</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="219"/>
-        <location filename="../../ui/pane/filepane.cpp" line="378"/>
+        <location filename="../../ui/pane/filepane.cpp" line="263"/>
+        <location filename="../../ui/pane/filepane.cpp" line="443"/>
         <source>Copy</source>
         <translation>Copia</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="221"/>
+        <location filename="../../ui/pane/filepane.cpp" line="265"/>
         <source>Pane: Copy</source>
         <translation>Pannello: Copia</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="226"/>
-        <location filename="../../ui/pane/filepane.cpp" line="380"/>
+        <location filename="../../ui/pane/filepane.cpp" line="270"/>
+        <location filename="../../ui/pane/filepane.cpp" line="445"/>
         <source>Paste</source>
         <translation>Incolla</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="228"/>
+        <location filename="../../ui/pane/filepane.cpp" line="272"/>
         <source>Pane: Paste</source>
         <translation>Pannello: Incolla</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="243"/>
+        <location filename="../../ui/pane/filepane.cpp" line="288"/>
         <source>“%1” does not exist.</source>
         <translation>“%1” non esiste.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="362"/>
+        <location filename="../../ui/pane/filepane.cpp" line="427"/>
         <source>Open</source>
         <translation>Apri</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="368"/>
+        <location filename="../../ui/pane/filepane.cpp" line="433"/>
         <source>Add “%1” to Bookmarks</source>
         <translation>Aggiungi “%1” ai segnalibri</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="369"/>
+        <location filename="../../ui/pane/filepane.cpp" line="434"/>
         <source>Add This Folder to Bookmarks</source>
         <translation>Aggiungi questa cartella ai segnalibri</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="373"/>
+        <location filename="../../ui/pane/filepane.cpp" line="438"/>
         <source>Batch Rename...</source>
         <translation>Rinomina multipla...</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="383"/>
+        <location filename="../../ui/pane/filepane.cpp" line="448"/>
         <source>Checksums...</source>
         <translation>Checksum...</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="386"/>
+        <location filename="../../ui/pane/filepane.cpp" line="451"/>
         <source>Open Terminal Here</source>
         <translation>Apri terminale qui</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="387"/>
+        <location filename="../../ui/pane/filepane.cpp" line="453"/>
         <source>More Options (Shell Menu)...</source>
         <translation>Altre opzioni (menu di sistema)...</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="390"/>
+        <location filename="../../ui/pane/filepane.cpp" line="456"/>
         <source>Properties</source>
         <translation>Proprietà</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="439"/>
+        <location filename="../../ui/pane/filepane.cpp" line="498"/>
+        <source>Pane is read-only: new folder is blocked.</source>
+        <translation>Il pannello è in sola lettura: la creazione di una cartella è bloccata.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/pane/filepane.cpp" line="511"/>
         <source>Could not create the new folder.</source>
         <translation>Impossibile creare la nuova cartella.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="465"/>
-        <location filename="../../ui/pane/filepane.cpp" line="478"/>
+        <location filename="../../ui/pane/filepane.cpp" line="578"/>
+        <location filename="../../ui/pane/filepane.cpp" line="591"/>
         <source>Pane is read-only: rename is blocked.</source>
         <translation>Il pannello è in sola lettura: la rinomina è bloccata.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="510"/>
+        <location filename="../../ui/pane/filepane.cpp" line="623"/>
         <source>Pane is read-only: delete is blocked.</source>
         <translation>Il pannello è in sola lettura: l&apos;eliminazione è bloccata.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="519"/>
+        <location filename="../../ui/pane/filepane.cpp" line="632"/>
         <source>Move “%1” to the Trash?</source>
         <translation>Spostare “%1” nel cestino?</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="520"/>
+        <location filename="../../ui/pane/filepane.cpp" line="633"/>
         <source>Move %1 items to the Trash?</source>
         <translation>Spostare %1 elementi nel cestino?</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="541"/>
+        <location filename="../../ui/pane/filepane.cpp" line="654"/>
         <source>Deleting</source>
         <translation>Eliminazione in corso</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="614"/>
+        <location filename="../../ui/pane/filepane.cpp" line="670"/>
+        <source>Pane is read-only: cut is blocked.</source>
+        <translation>Il pannello è in sola lettura: il taglio è bloccato.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/pane/filepane.cpp" line="699"/>
+        <source>Could not extract the file from the archive.</source>
+        <translation>Impossibile estrarre il file dall&apos;archivio.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/pane/filepane.cpp" line="734"/>
+        <source>Pane is read-only: paste is blocked.</source>
+        <translation>Il pannello è in sola lettura: l&apos;incolla è bloccato.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/pane/filepane.cpp" line="783"/>
         <source>%1 item(s)</source>
         <translation>%1 elemento/i</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="625"/>
+        <location filename="../../ui/pane/filepane.cpp" line="794"/>
         <source> — %1 selected</source>
         <translation> — %1 selezionati</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="627"/>
+        <location filename="../../ui/pane/filepane.cpp" line="796"/>
         <source> (%1)</source>
         <translation> (%1)</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="630"/>
+        <location filename="../../ui/pane/filepane.cpp" line="799"/>
         <source> — read-only</source>
         <translation> — sola lettura</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="632"/>
+        <location filename="../../ui/pane/filepane.cpp" line="801"/>
         <source> — filtered</source>
         <translation> — filtrato</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="587"/>
-        <location filename="../../ui/pane/filepane.cpp" line="708"/>
+        <location filename="../../ui/pane/filepane.cpp" line="860"/>
+        <source>Pane is read-only: drop is blocked.</source>
+        <translation>Il pannello è in sola lettura: il rilascio è bloccato.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/pane/filepane.cpp" line="756"/>
+        <location filename="../../ui/pane/filepane.cpp" line="887"/>
         <source>Moving</source>
         <translation>Spostamento in corso</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="587"/>
-        <location filename="../../ui/pane/filepane.cpp" line="708"/>
+        <location filename="../../ui/pane/filepane.cpp" line="756"/>
+        <location filename="../../ui/pane/filepane.cpp" line="887"/>
         <source>Copying</source>
         <translation>Copia in corso</translation>
     </message>
@@ -521,42 +554,42 @@
 <context>
     <name>FileSystemModel</name>
     <message>
-        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="312"/>
+        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="352"/>
         <source>File folder</source>
         <translation>Cartella di file</translation>
     </message>
     <message>
-        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="336"/>
+        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="376"/>
         <source>Name</source>
         <translation>Nome</translation>
     </message>
     <message>
-        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="338"/>
+        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="378"/>
         <source>Size</source>
         <translation>Dimensione</translation>
     </message>
     <message>
-        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="340"/>
+        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="380"/>
         <source>Type</source>
         <translation>Tipo</translation>
     </message>
     <message>
-        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="342"/>
+        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="382"/>
         <source>Date Modified</source>
         <translation>Data modifica</translation>
     </message>
     <message>
-        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="354"/>
+        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="394"/>
         <source>Pane is read-only: rename is blocked.</source>
         <translation>Il pannello è in sola lettura: la rinomina è bloccata.</translation>
     </message>
     <message>
-        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="364"/>
+        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="404"/>
         <source>“%1” is not a valid name.</source>
         <translation>“%1” non è un nome valido.</translation>
     </message>
     <message>
-        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="377"/>
+        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="417"/>
         <source>Could not rename “%1” to “%2”.</source>
         <translation>Impossibile rinominare “%1” in “%2”.</translation>
     </message>
@@ -971,25 +1004,25 @@
 <context>
     <name>QObject</name>
     <message>
-        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="34"/>
+        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="37"/>
         <location filename="../../ui/finder/searchresultsmodel.cpp" line="19"/>
         <source>%1 bytes</source>
         <translation>%1 byte</translation>
     </message>
     <message>
-        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="36"/>
+        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="39"/>
         <location filename="../../ui/finder/searchresultsmodel.cpp" line="21"/>
         <source>%1 KB</source>
         <translation>%1 KB</translation>
     </message>
     <message>
-        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="38"/>
+        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="41"/>
         <location filename="../../ui/finder/searchresultsmodel.cpp" line="23"/>
         <source>%1 MB</source>
         <translation>%1 MB</translation>
     </message>
     <message>
-        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="39"/>
+        <location filename="../../core/fsmodel/filesystemmodel.cpp" line="42"/>
         <location filename="../../ui/finder/searchresultsmodel.cpp" line="24"/>
         <source>%1 GB</source>
         <translation>%1 GB</translation>
@@ -1045,32 +1078,32 @@
         <translation>%1 (%2)</translation>
     </message>
     <message>
-        <location filename="../../core/ops/fileoptask.cpp" line="117"/>
+        <location filename="../../core/ops/fileoptask.cpp" line="125"/>
         <source>File Already Exists</source>
         <translation>Il file esiste già</translation>
     </message>
     <message>
-        <location filename="../../core/ops/fileoptask.cpp" line="118"/>
+        <location filename="../../core/ops/fileoptask.cpp" line="126"/>
         <source>“%1” already exists in the destination folder.</source>
         <translation>“%1” esiste già nella cartella di destinazione.</translation>
     </message>
     <message>
-        <location filename="../../core/ops/fileoptask.cpp" line="120"/>
+        <location filename="../../core/ops/fileoptask.cpp" line="128"/>
         <source>Do you want to overwrite it?</source>
         <translation>Vuoi sovrascriverlo?</translation>
     </message>
     <message>
-        <location filename="../../core/ops/fileoptask.cpp" line="122"/>
+        <location filename="../../core/ops/fileoptask.cpp" line="130"/>
         <source>Apply to all remaining conflicts</source>
         <translation>Applica a tutti i conflitti rimanenti</translation>
     </message>
     <message>
-        <location filename="../../core/ops/fileoptask.cpp" line="125"/>
+        <location filename="../../core/ops/fileoptask.cpp" line="133"/>
         <source>Overwrite</source>
         <translation>Sovrascrivi</translation>
     </message>
     <message>
-        <location filename="../../core/ops/fileoptask.cpp" line="126"/>
+        <location filename="../../core/ops/fileoptask.cpp" line="134"/>
         <source>Skip</source>
         <translation>Salta</translation>
     </message>

@@ -14,6 +14,9 @@
 #>
 param(
     [string]$QtBinDir = "C:\Qt\6.11.1\msvc2022_64\bin",
+    # vcpkg install prefix providing libarchive (`vcpkg install libarchive`);
+    # its runtime DLLs are copied next to the exe below.
+    [string]$VcpkgInstalledDir = "D:\tools\vcpkg\installed\x64-windows",
     [string]$BuildDir = "$PSScriptRoot\..\..\build\release-package",
     [string]$StagingDir = "$BuildDir\staging"
 )
@@ -27,7 +30,7 @@ Write-Host "==> Configuring (Release)..."
 # output flow through un-caught corrupts the caller's `$stagingDir = &
 # stage-release.ps1 ...` capture into a multi-line blob of build log text.
 & cmake -S $repoRoot -B $BuildDir -G "Visual Studio 17 2022" -A x64 `
-    -DCMAKE_PREFIX_PATH="$(Split-Path $QtBinDir -Parent)" | Out-Host
+    -DCMAKE_PREFIX_PATH="$(Split-Path $QtBinDir -Parent);$VcpkgInstalledDir" | Out-Host
 if ($LASTEXITCODE -ne 0) { throw "CMake configure failed" }
 
 Write-Host "==> Building (Release)..."
@@ -52,6 +55,14 @@ Write-Host "==> Running windeployqt..."
 $windeployqt = Join-Path $QtBinDir "windeployqt.exe"
 & $windeployqt --release (Join-Path $StagingDir "lvdExplorer.exe") | Out-Host
 if ($LASTEXITCODE -ne 0) { throw "windeployqt failed" }
+
+# libarchive and the compression libraries it links against (archive.dll
+# needs no OpenSSL with the feature set libarchive is installed with here).
+foreach ($dll in @("archive.dll", "z.dll", "bz2.dll", "liblzma.dll", "lz4.dll", "zstd.dll")) {
+    $source = Join-Path $VcpkgInstalledDir "bin\$dll"
+    if (-not (Test-Path $source)) { throw "Missing libarchive runtime DLL: $source" }
+    Copy-Item $source -Destination $StagingDir
+}
 
 Write-Host "==> Staged at $StagingDir"
 return [PSCustomObject]@{ StagingDir = $StagingDir; Version = $version }

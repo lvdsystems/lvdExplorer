@@ -30,6 +30,14 @@ QString uniqueCopyDestination(const QString &path)
     return candidate;
 }
 
+// Windows copies inherit the source's read-only attribute, and removing a
+// read-only file fails, which would otherwise block every later overwrite.
+void removeExistingFile(const QString &path)
+{
+    QFile::setPermissions(path, QFile::permissions(path) | QFile::WriteOwner);
+    QFile::remove(path);
+}
+
 } // namespace
 
 FileOpTask::FileOpTask(FileOpRequest request, QSharedPointer<QAtomicInt> cancelled)
@@ -48,7 +56,7 @@ bool FileOpTask::copyRecursively(const QString &sourcePath, const QString &destP
     const QFileInfo sourceInfo(sourcePath);
     if (!sourceInfo.isDir()) {
         if (overwrite && QFileInfo::exists(destPath))
-            QFile::remove(destPath);
+            removeExistingFile(destPath);
         return QFile::copy(sourcePath, destPath);
     }
 
@@ -85,7 +93,7 @@ bool FileOpTask::moveOne(const QString &sourcePath, const QString &destPath, int
         if (destInfo.isDir())
             QDir(destPath).removeRecursively();
         else
-            QFile::remove(destPath);
+            removeExistingFile(destPath);
     }
 
     QDir dir;

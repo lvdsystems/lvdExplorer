@@ -29,6 +29,12 @@ add_library(lvdCore STATIC
     search/contentsearchtask.cpp
     search/contentsearchengine.h
     search/contentsearchengine.cpp
+    archive/archivereader.h
+    archive/archivereader.cpp
+    archive/archiveextracttask.h
+    archive/archiveextracttask.cpp
+    fsmodel/archivescantask.h
+    fsmodel/archivescantask.cpp
 )
 
 target_include_directories(lvdCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
@@ -36,3 +42,9 @@ target_include_directories(lvdCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/..)
 # QFileIconProvider (used by FileSystemModel for the Name column's icon)
 # lives in Qt Widgets, not Core.
 target_link_libraries(lvdCore PUBLIC Qt6::Core Qt6::Widgets)
+
+# libarchive (BSD-2-Clause) reads ZIP, 7z and RAR. Windows: point
+# CMAKE_PREFIX_PATH at a vcpkg install (vcpkg install libarchive). Linux:
+# libarchive-dev.
+find_package(LibArchive 3.4 REQUIRED)
+target_link_libraries(lvdCore PRIVATE LibArchive::LibArchive)

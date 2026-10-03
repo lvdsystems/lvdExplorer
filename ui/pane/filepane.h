@@ -28,11 +28,13 @@ public:
 
     bool isReadOnly() const { return m_readOnly; }
     void setReadOnly(bool readOnly);
+    bool isBrowsingArchive() const { return m_inArchive; }
 
     // Used by FileTreeView to implement cross-pane drag & drop (§8) without
     // routing file-system operations through QAbstractItemModel's
     // mimeData()/dropMimeData(), which assumes reordering within one model.
     QStringList selectedPaths() const;
+    QStringList extractForTransfer(const QStringList &archiveEntryPaths);
     bool isDirIndex(const QModelIndex &index) const;
     QString pathForIndex(const QModelIndex &index) const;
     void handleFilesDropped(const QStringList &sourcePaths, const QString &destDir,
@@ -61,6 +63,9 @@ private slots:
     void renameSelected();
     void batchRenameSelected();
     void showChecksums();
+    void onEditorClosed();
+    void rememberSelection();
+    void restoreSelection();
     void deleteSelected();
     void createNewFolder();
     void cutSelected();
@@ -74,6 +79,9 @@ private:
     QList<QModelIndex> selectedNameIndexes() const;
     void showReadOnlyNotice(const QString &message);
     void updateStatusText();
+    bool changesBlocked() const { return m_readOnly || m_inArchive; }
+    void openArchiveEntry(const QString &archiveEntryPath);
+    void copyArchiveEntries(const QStringList &archiveEntryPaths);
 
     FileSystemModel *m_model = nullptr;
     FileTreeView *m_view = nullptr;
@@ -94,5 +102,10 @@ private:
     int m_historyIndex = -1;
     QString m_currentPath;
     bool m_readOnly = false;
+    bool m_inArchive = false;
     QString m_statusText;
+    // Selection captured just before a scan resets the view, restored once
+    // the scan finishes so external changes don't drop what was selected.
+    QStringList m_keptSelectionPaths;
+    QString m_keptCurrentPath;
 };

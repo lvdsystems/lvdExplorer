@@ -18,6 +18,12 @@ public:
 
     void setOwnerPane(FilePane *pane) { m_ownerPane = pane; }
 
+    using QTreeView::edit;
+    bool edit(const QModelIndex &index, EditTrigger trigger, QEvent *event) override;
+
+signals:
+    void editStarted();
+
 protected:
     void startDrag(Qt::DropActions supportedActions) override;
     void dragEnterEvent(QDragEnterEvent *event) override;

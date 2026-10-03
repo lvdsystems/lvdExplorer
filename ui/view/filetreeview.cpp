@@ -24,12 +24,25 @@ FileTreeView::FileTreeView(QWidget *parent)
 {
 }
 
+bool FileTreeView::edit(const QModelIndex &index, EditTrigger trigger, QEvent *event)
+{
+    const bool started = QTreeView::edit(index, trigger, event);
+    if (started)
+        emit editStarted();
+    return started;
+}
+
 void FileTreeView::startDrag(Qt::DropActions supportedActions)
 {
     if (!m_ownerPane)
         return;
 
-    const QStringList paths = m_ownerPane->selectedPaths();
+    // Inside an archive the selection has to be extracted to real files
+    // before the drag can carry them; the drag exec() below waits for the
+    // drop, so this extraction happens on the UI thread.
+    const QStringList paths = m_ownerPane->isBrowsingArchive()
+        ? m_ownerPane->extractForTransfer(m_ownerPane->selectedPaths())
+        : m_ownerPane->selectedPaths();
     if (paths.isEmpty())
         return;
 

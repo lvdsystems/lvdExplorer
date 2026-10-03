@@ -13,6 +13,10 @@
   <a href="https://www.lvdsystems.eu">www.lvdsystems.eu</a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/lvdsystems/lvdExplorer/releases/latest"><strong>Download the latest release</strong></a>
+</p>
+
 ![lvdExplorer screenshot](docs/screenshot.png)
 ![lvdExplorer screenshot](docs/screenshot2.png)
 

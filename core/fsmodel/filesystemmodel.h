@@ -44,6 +44,10 @@ public:
     QString rootPath() const { return m_rootPath; }
     void refresh();
 
+    // While an inline rename is open, a watcher-triggered rescan would reset
+    // the view and tear the editor down mid-edit, so it's held until resumed.
+    void setAutoRefreshSuspended(bool suspended);
+
     // Backstop enforcement for §10: FilePane's own read-only checkbox
     // already declines to *start* an inline rename, but QTreeView's
     // SelectedClicked edit trigger can reach setData() without going
@@ -72,6 +76,9 @@ public:
     void sort(int column, Qt::SortOrder order) override;
 
 signals:
+    // Fires before the reset that every scan begins with, while the view
+    // still knows its selection.
+    void scanAboutToStart();
     void scanStarted();
     void scanFinished(int fileCount, int dirCount);
     void errorOccurred(const QString &message);
@@ -80,6 +87,7 @@ private slots:
     void handleBatchReady(int generation, QVector<FileEntry> entries);
     void handleScanFinished(int generation, bool wasCancelled);
     void scheduleAutoRefresh();
+    void onAutoRefreshTimeout();
 
 private:
     void startScan();
@@ -104,6 +112,8 @@ private:
     QFileIconProvider m_iconProvider;
     QFileSystemWatcher *m_watcher = nullptr;
     QTimer *m_refreshDebounce = nullptr;
+    bool m_autoRefreshSuspended = false;
+    bool m_autoRefreshPending = false;
 
     QString m_filterText;
     FilterMode m_filterMode = FilterMode::Substring;

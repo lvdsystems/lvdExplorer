@@ -24,6 +24,7 @@ private slots:
     void copyIntoSameFolderMakesNumberedSibling();
     void conflictingCopyOverwritesWhenUserChoosesOverwrite();
     void conflictingCopySkipsWhenUserChoosesSkip();
+    void overwriteReplacesReadOnlyDestinationFile();
 
 private:
     void writeContent(const QString &path, const QByteArray &content);
@@ -211,6 +212,41 @@ void OpsEngineTest::conflictingCopyOverwritesWhenUserChoosesOverwrite()
     const QString dest = QDir(dstDir.path()).filePath(QStringLiteral("a.txt"));
     writeContent(source, QByteArrayLiteral("new content"));
     writeContent(dest, QByteArrayLiteral("old content"));
+
+    FileOpRequest request;
+    request.kind = FileOpKind::Copy;
+    request.sourcePaths = {source};
+    request.destDir = dstDir.path();
+
+    FileOpHandle *handle = OpsEngine::instance().submit(request);
+    QVERIFY(handle);
+
+    answerNextConflictDialog(QMessageBox::AcceptRole, /*checkApplyToAll=*/false);
+
+    QSignalSpy finishedSpy(handle, &FileOpHandle::finished);
+    QVERIFY(finishedSpy.wait(5000));
+
+    const QStringList failed = finishedSpy.first().at(1).toStringList();
+    QVERIFY(failed.isEmpty());
+
+    QFile destFile(dest);
+    QVERIFY(destFile.open(QIODevice::ReadOnly));
+    QCOMPARE(destFile.readAll(), QByteArrayLiteral("new content"));
+}
+
+void OpsEngineTest::overwriteReplacesReadOnlyDestinationFile()
+{
+    // Regression test for "overwrite-all still fails for files already
+    // present" (seen dragging from 7-Zip): an existing destination marked
+    // read-only -- which Windows copies carry over from the source -- made
+    // the remove-before-copy step fail silently and the copy failed too.
+    QTemporaryDir srcDir, dstDir;
+    QVERIFY(srcDir.isValid() && dstDir.isValid());
+    const QString source = QDir(srcDir.path()).filePath(QStringLiteral("a.txt"));
+    const QString dest = QDir(dstDir.path()).filePath(QStringLiteral("a.txt"));
+    writeContent(source, QByteArrayLiteral("new content"));
+    writeContent(dest, QByteArrayLiteral("old content"));
+    QVERIFY(QFile::setPermissions(dest, QFile::ReadOwner | QFile::ReadUser));
 
     FileOpRequest request;
     request.kind = FileOpKind::Copy;

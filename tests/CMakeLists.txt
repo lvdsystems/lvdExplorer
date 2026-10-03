@@ -35,3 +35,8 @@ add_test(NAME DriveListTaskTest COMMAND drivelisttasktest)
 qt_add_executable(checksumtasktest checksumtasktest.cpp)
 target_link_libraries(checksumtasktest PRIVATE lvdCore Qt6::Test)
 add_test(NAME ChecksumTaskTest COMMAND checksumtasktest)
+
+find_package(LibArchive 3.4 REQUIRED)
+qt_add_executable(archivereadertest archivereadertest.cpp)
+target_link_libraries(archivereadertest PRIVATE lvdCore LibArchive::LibArchive Qt6::Test)
+add_test(NAME ArchiveReaderTest COMMAND archivereadertest)

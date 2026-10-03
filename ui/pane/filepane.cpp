@@ -1,5 +1,7 @@
 #include "ui/pane/filepane.h"
 
+#include "core/archive/archiveextracttask.h"
+#include "core/archive/archivereader.h"
 #include "core/fsmodel/drivelisttask.h"
 #include "core/fsmodel/filesystemmodel.h"
 #include "core/ops/fileophandle.h"
@@ -16,6 +18,7 @@
 #include "ui/view/filetreeview.h"
 #include "ui/widgets/breadcrumbbar.h"
 
+#include <QAbstractItemDelegate>
 #include <QAction>
 #include <QCheckBox>
 #include <QCursor>
@@ -33,12 +36,33 @@
 #include <QPointer>
 #include <QStorageInfo>
 #include <QStyle>
+#include <QTemporaryDir>
 #include <QThreadPool>
 #include <QToolBar>
+#include <QUuid>
 #include <QToolButton>
 #include <QToolTip>
 #include <QUrl>
 #include <QVBoxLayout>
+
+namespace {
+
+// Entries opened or copied out of an archive are extracted here. The temp
+// root is removed when the process exits.
+QString archiveTempRoot()
+{
+    static QTemporaryDir root;
+    return root.isValid() ? root.path() : QDir::tempPath();
+}
+
+QString newArchiveTempFolder()
+{
+    const QString folder = QDir(archiveTempRoot()).filePath(QUuid::createUuid().toString(QUuid::WithoutBraces));
+    QDir().mkpath(folder);
+    return folder;
+}
+
+} // namespace
 
 FilePane::FilePane(QWidget *parent)
     : QWidget(parent)
@@ -124,6 +148,13 @@ FilePane::FilePane(QWidget *parent)
     connect(m_upAction, &QAction::triggered, this, &FilePane::goUp);
     connect(m_refreshAction, &QAction::triggered, this, &FilePane::refresh);
 
+    auto *backspaceUpAction = new QAction(tr("Up"), m_view);
+    backspaceUpAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    ShortcutManager::instance().registerAction(backspaceUpAction, QStringLiteral("pane.upBackspace"),
+                                                tr("Pane: Up (Backspace)"), QKeySequence(Qt::Key_Backspace));
+    m_view->addAction(backspaceUpAction);
+    connect(backspaceUpAction, &QAction::triggered, this, &FilePane::goUp);
+
     toolBar->addSeparator();
     auto *newFolderAction = toolBar->addAction(IconFactory::newFolder(), tr("New Folder"));
     newFolderAction->setShortcutContext(Qt::WidgetWithChildrenShortcut);
@@ -198,6 +229,11 @@ FilePane::FilePane(QWidget *parent)
         QMessageBox::warning(this, tr("lvdExplorer"), message);
     });
 
+    connect(m_view, &FileTreeView::editStarted, this, [this] { m_model->setAutoRefreshSuspended(true); });
+    connect(m_view->itemDelegate(), &QAbstractItemDelegate::closeEditor, this, &FilePane::onEditorClosed);
+    connect(m_model, &FileSystemModel::scanAboutToStart, this, &FilePane::rememberSelection);
+    connect(m_model, &FileSystemModel::scanFinished, this, &FilePane::restoreSelection);
+
     auto *deleteAction = new QAction(tr("Delete"), m_view);
     deleteAction->setShortcutContext(Qt::WidgetShortcut);
     ShortcutManager::instance().registerAction(deleteAction, QStringLiteral("pane.delete"), tr("Pane: Delete"),
@@ -247,7 +283,8 @@ FilePane::FilePane(QWidget *parent)
 void FilePane::navigateTo(const QString &path)
 {
     const QString cleaned = QDir::cleanPath(path);
-    if (cleaned.isEmpty() || !QFileInfo::exists(cleaned)) {
+    const bool reachable = QFileInfo::exists(cleaned) || ArchiveReader::splitArchivePath(cleaned, nullptr, nullptr);
+    if (cleaned.isEmpty() || !reachable) {
         QMessageBox::warning(this, tr("lvdExplorer"), tr("“%1” does not exist.").arg(path));
         return;
     }
@@ -262,6 +299,8 @@ void FilePane::navigateTo(const QString &path)
 void FilePane::navigateInternal(const QString &path)
 {
     m_currentPath = path;
+    m_inArchive = ArchiveReader::splitArchivePath(path, nullptr, nullptr);
+    m_model->setReadOnly(changesBlocked());
     m_model->setRootPath(path);
     m_breadcrumb->setPath(path);
     updateNavigationActions();
@@ -298,6 +337,19 @@ void FilePane::goForward()
 
 void FilePane::goUp()
 {
+    if (m_inArchive) {
+        QString archive;
+        QString inner;
+        ArchiveReader::splitArchivePath(m_currentPath, &archive, &inner);
+        if (inner.isEmpty()) {
+            navigateToAndSelect(QFileInfo(archive).absolutePath(), archive);
+            return;
+        }
+        const int slash = inner.lastIndexOf(QLatin1Char('/'));
+        navigateTo(slash < 0 ? archive : archive + QLatin1Char('/') + inner.left(slash));
+        return;
+    }
+
     QDir dir(m_currentPath);
     if (!dir.cdUp())
         return;
@@ -315,7 +367,7 @@ void FilePane::updateNavigationActions()
     m_forwardAction->setEnabled(m_historyIndex >= 0 && m_historyIndex < m_history.size() - 1);
 
     QDir dir(m_currentPath);
-    m_upAction->setEnabled(dir.cdUp());
+    m_upAction->setEnabled(m_inArchive || dir.cdUp());
 }
 
 void FilePane::onActivated(const QModelIndex &index)
@@ -325,6 +377,10 @@ void FilePane::onActivated(const QModelIndex &index)
         return;
 
     if (m_model->isDir(index))
+        navigateTo(path);
+    else if (m_inArchive)
+        openArchiveEntry(path);
+    else if (ArchiveReader::isArchiveFile(path))
         navigateTo(path);
     else
         QDesktopServices::openUrl(QUrl::fromLocalFile(path));
@@ -366,6 +422,7 @@ void FilePane::showContextMenu(const QPoint &pos)
 
     QMenu menu(this);
     QAction *newFolderAction = menu.addAction(IconFactory::newFolder(), tr("New Folder"));
+    newFolderAction->setEnabled(!m_inArchive);
     menu.addSeparator();
     QAction *openAction = menu.addAction(tr("Open"));
     openAction->setEnabled(!indexes.isEmpty());
@@ -382,20 +439,22 @@ void FilePane::showContextMenu(const QPoint &pos)
     batchRenameAction->setEnabled(indexes.size() >= 2);
     menu.addSeparator();
     QAction *cutAction = menu.addAction(tr("Cut"));
-    cutAction->setEnabled(!indexes.isEmpty());
+    cutAction->setEnabled(!indexes.isEmpty() && !m_inArchive);
     QAction *copyAction = menu.addAction(tr("Copy"));
     copyAction->setEnabled(!indexes.isEmpty());
     QAction *pasteAction = menu.addAction(tr("Paste"));
-    pasteAction->setEnabled(!FileClipboard::get().isEmpty());
+    pasteAction->setEnabled(!FileClipboard::get().isEmpty() && !m_inArchive);
     menu.addSeparator();
     QAction *checksumAction = menu.addAction(IconFactory::checksum(), tr("Checksums..."));
-    checksumAction->setEnabled(!indexes.isEmpty());
+    checksumAction->setEnabled(!indexes.isEmpty() && !m_inArchive);
     menu.addSeparator();
     QAction *terminalAction = menu.addAction(IconFactory::terminal(), tr("Open Terminal Here"));
+    terminalAction->setEnabled(!m_inArchive);
     QAction *nativeMenuAction = menu.addAction(IconFactory::shellMenu(), tr("More Options (Shell Menu)..."));
-    nativeMenuAction->setEnabled(!indexes.isEmpty());
+    nativeMenuAction->setEnabled(!indexes.isEmpty() && !m_inArchive);
     menu.addSeparator();
     QAction *propertiesAction = menu.addAction(IconFactory::properties(), tr("Properties"));
+    propertiesAction->setEnabled(!m_inArchive);
     menu.addSeparator();
     QAction *deleteAction = menu.addAction(tr("Delete"));
     deleteAction->setEnabled(!indexes.isEmpty());
@@ -434,7 +493,12 @@ void FilePane::createNewFolder()
 {
     // Creating new content in a locked pane is deliberately not blocked
     // (§10): read-only guards delete/rename/move, not "add a thing that
-    // wasn't there before".
+    // wasn't there before". An archive can't take a new entry in place, though.
+    if (m_inArchive) {
+        showReadOnlyNotice(tr("Pane is read-only: new folder is blocked."));
+        return;
+    }
+
     const QString baseName = tr("New Folder");
     QDir dir(m_currentPath);
 
@@ -467,9 +531,50 @@ void FilePane::createNewFolder()
     refresh();
 }
 
+void FilePane::onEditorClosed()
+{
+    m_model->setAutoRefreshSuspended(false);
+}
+
+void FilePane::rememberSelection()
+{
+    m_keptSelectionPaths.clear();
+    m_keptCurrentPath = m_model->filePath(m_view->currentIndex());
+    for (const QModelIndex &index : selectedNameIndexes())
+        m_keptSelectionPaths.append(m_model->filePath(index));
+}
+
+void FilePane::restoreSelection()
+{
+    if (m_keptSelectionPaths.isEmpty())
+        return;
+
+    QItemSelection selection;
+    QModelIndex currentIndex;
+    for (int row = 0; row < m_model->rowCount(); ++row) {
+        const QModelIndex nameIndex = m_model->index(row, FileSystemModel::NameColumn);
+        const QString path = m_model->filePath(nameIndex);
+        if (!m_keptSelectionPaths.contains(path))
+            continue;
+        selection.select(nameIndex, nameIndex);
+        if (path == m_keptCurrentPath)
+            currentIndex = nameIndex;
+    }
+    m_keptSelectionPaths.clear();
+    m_keptCurrentPath.clear();
+
+    if (selection.isEmpty())
+        return;
+    m_view->selectionModel()->select(selection, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+    if (currentIndex.isValid()) {
+        m_view->setCurrentIndex(currentIndex);
+        m_view->scrollTo(currentIndex);
+    }
+}
+
 void FilePane::renameSelected()
 {
-    if (m_readOnly) {
+    if (changesBlocked()) {
         showReadOnlyNotice(tr("Pane is read-only: rename is blocked."));
         return;
     }
@@ -482,7 +587,7 @@ void FilePane::renameSelected()
 
 void FilePane::batchRenameSelected()
 {
-    if (m_readOnly) {
+    if (changesBlocked()) {
         showReadOnlyNotice(tr("Pane is read-only: rename is blocked."));
         return;
     }
@@ -514,7 +619,7 @@ void FilePane::deleteSelected()
     // it right after. OpsEngine::submit() below is the real, unbypassable
     // enforcement point, this is just avoiding a pointless
     // confirmation dialog on the common direct-action path.
-    if (m_readOnly) {
+    if (changesBlocked()) {
         showReadOnlyNotice(tr("Pane is read-only: delete is blocked."));
         return;
     }
@@ -561,6 +666,10 @@ void FilePane::cutSelected()
     const QStringList paths = selectedPaths();
     if (paths.isEmpty())
         return;
+    if (m_inArchive) {
+        showReadOnlyNotice(tr("Pane is read-only: cut is blocked."));
+        return;
+    }
     FileClipboard::set(paths, /*cut=*/true, m_readOnly);
 }
 
@@ -569,11 +678,89 @@ void FilePane::copySelected()
     const QStringList paths = selectedPaths();
     if (paths.isEmpty())
         return;
+    if (m_inArchive) {
+        copyArchiveEntries(paths);
+        return;
+    }
     FileClipboard::set(paths, /*cut=*/false, m_readOnly);
+}
+
+void FilePane::openArchiveEntry(const QString &archiveEntryPath)
+{
+    QString archive;
+    QString inner;
+    if (!ArchiveReader::splitArchivePath(archiveEntryPath, &archive, &inner) || inner.isEmpty())
+        return;
+
+    auto *task = new ArchiveExtractTask(archive, {inner}, newArchiveTempFolder());
+    connect(task, &ArchiveExtractTask::finished, this, [this](const QStringList &topLevel, const QString &error) {
+        if (!error.isEmpty() || topLevel.isEmpty()) {
+            QMessageBox::warning(this, tr("lvdExplorer"),
+                                 error.isEmpty() ? tr("Could not extract the file from the archive.") : error);
+            return;
+        }
+        QDesktopServices::openUrl(QUrl::fromLocalFile(topLevel.first()));
+    });
+    QThreadPool::globalInstance()->start(task);
+}
+
+QStringList FilePane::extractForTransfer(const QStringList &archiveEntryPaths)
+{
+    QString archive;
+    QStringList entries;
+    for (const QString &path : archiveEntryPaths) {
+        QString inner;
+        if (ArchiveReader::splitArchivePath(path, &archive, &inner) && !inner.isEmpty())
+            entries.append(inner);
+    }
+    if (entries.isEmpty())
+        return {};
+
+    ArchiveExtractTask task(archive, entries, newArchiveTempFolder());
+    QStringList topLevel;
+    QString error;
+    connect(&task, &ArchiveExtractTask::finished, this, [&topLevel, &error](const QStringList &paths, const QString &message) {
+        topLevel = paths;
+        error = message;
+    });
+    task.run();
+
+    if (!error.isEmpty())
+        QMessageBox::warning(this, tr("lvdExplorer"), error);
+    return topLevel;
+}
+
+void FilePane::copyArchiveEntries(const QStringList &archiveEntryPaths)
+{
+    QString archive;
+    QStringList entries;
+    for (const QString &path : archiveEntryPaths) {
+        QString inner;
+        if (ArchiveReader::splitArchivePath(path, &archive, &inner) && !inner.isEmpty())
+            entries.append(inner);
+    }
+    if (entries.isEmpty())
+        return;
+
+    auto *task = new ArchiveExtractTask(archive, entries, newArchiveTempFolder());
+    connect(task, &ArchiveExtractTask::finished, this, [this](const QStringList &topLevel, const QString &error) {
+        if (!error.isEmpty()) {
+            QMessageBox::warning(this, tr("lvdExplorer"), error);
+            return;
+        }
+        if (!topLevel.isEmpty())
+            FileClipboard::set(topLevel, /*cut=*/false, /*sourceReadOnly=*/false);
+    });
+    QThreadPool::globalInstance()->start(task);
 }
 
 void FilePane::pasteClipboard()
 {
+    if (m_inArchive) {
+        showReadOnlyNotice(tr("Pane is read-only: paste is blocked."));
+        return;
+    }
+
     const FileClipboard::Contents contents = FileClipboard::get();
     if (contents.isEmpty())
         return;
@@ -599,7 +786,7 @@ void FilePane::pasteClipboard()
 void FilePane::setReadOnly(bool readOnly)
 {
     m_readOnly = readOnly;
-    m_model->setReadOnly(readOnly);
+    m_model->setReadOnly(changesBlocked());
 
     m_readOnlyCheck->blockSignals(true);
     m_readOnlyCheck->setChecked(readOnly);
@@ -634,7 +821,7 @@ void FilePane::updateStatusText()
         if (anySized)
             text += tr(" (%1)").arg(QLocale::system().formattedDataSize(totalBytes));
     }
-    if (m_readOnly)
+    if (changesBlocked())
         text += tr(" — read-only");
     if (!m_filterEdit->text().isEmpty())
         text += tr(" — filtered");
@@ -695,6 +882,10 @@ void FilePane::handleFilesDropped(const QStringList &sourcePaths, const QString 
 {
     if (sourcePaths.isEmpty())
         return;
+    if (m_inArchive) {
+        showReadOnlyNotice(tr("Pane is read-only: drop is blocked."));
+        return;
+    }
 
     bool useMove;
     if (forceCopy)
