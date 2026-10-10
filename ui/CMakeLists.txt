@@ -6,8 +6,15 @@ add_library(lvdUi STATIC
     bookmarks/bookmarkspanel.cpp
     clipboard/fileclipboard.h
     clipboard/fileclipboard.cpp
+    customactions/customaction.h
+    customactions/customactionmanager.h
+    customactions/customactionmanager.cpp
     dialogs/aboutdialog.h
     dialogs/aboutdialog.cpp
+    dialogs/customactionsdialog.h
+    dialogs/customactionsdialog.cpp
+    dialogs/editcustomactiondialog.h
+    dialogs/editcustomactiondialog.cpp
     dialogs/sessionmanagerdialog.h
     dialogs/sessionmanagerdialog.cpp
     dialogs/progressdialog.h

@@ -13,6 +13,7 @@ private slots:
     void rowsAreDragAndDropEnabled();
     void autoRefreshesWhenFileAddedExternally();
     void autoRefreshesWhenFileModifiedExternally();
+    void wildcardFilterMatchesWholeName();
 };
 
 void FileSystemModelTest::rowsAreDragAndDropEnabled()
@@ -98,6 +99,44 @@ void FileSystemModelTest::autoRefreshesWhenFileModifiedExternally()
     QVERIFY(finishedSpy.wait(5000));
     QCOMPARE(model.rowCount(), 1);
     QCOMPARE(model.sizeOf(model.index(0, FileSystemModel::NameColumn)), qint64(25));
+}
+
+void FileSystemModelTest::wildcardFilterMatchesWholeName()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    for (const QString &name : {QStringLiteral("report.txt"), QStringLiteral("report_final.txt"),
+                                 QStringLiteral("report.doc"), QStringLiteral("notes.txt")}) {
+        QFile file(dir.filePath(name));
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        file.close();
+    }
+
+    FileSystemModel model;
+    QSignalSpy finishedSpy(&model, &FileSystemModel::scanFinished);
+    model.setRootPath(dir.path());
+    QVERIFY(finishedSpy.wait(5000));
+    QCOMPARE(model.rowCount(), 4);
+
+    model.setFilterMode(FileSystemModel::FilterMode::Wildcard);
+    // "*" must match zero-or-more of anything, so this excludes
+    // "report.doc" and "notes.txt" but keeps both ".txt" names -- a plain
+    // substring filter for "report" would also match "report.doc", which
+    // is exactly the distinction a wildcard mode exists to make.
+    model.setFilterText(QStringLiteral("report*.txt"));
+    QCOMPARE(model.rowCount(), 2);
+
+    // Case-insensitive, matching Explorer's own wildcard behavior.
+    model.setFilterText(QStringLiteral("REPORT*.TXT"));
+    QCOMPARE(model.rowCount(), 2);
+
+    // "?" means exactly one character -- "report.doc" has the same
+    // 3-character extension length as "report.txt" (so "report.???" would
+    // match both), but only "report.txt" ends in "xt".
+    model.setFilterText(QStringLiteral("report.?xt"));
+    QCOMPARE(model.rowCount(), 1);
+    QCOMPARE(model.filePath(model.index(0, FileSystemModel::NameColumn)),
+             dir.filePath(QStringLiteral("report.txt")));
 }
 
 QTEST_MAIN(FileSystemModelTest)

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "core/session/sessiondata.h"
+#include "ui/customactions/customaction.h"
 
 #include <QModelIndex>
 #include <QStringList>
@@ -8,6 +9,7 @@
 
 class QAction;
 class QCheckBox;
+class QComboBox;
 class QLineEdit;
 class BreadcrumbBar;
 class FileSystemModel;
@@ -68,6 +70,7 @@ private slots:
     void restoreSelection();
     void deleteSelected();
     void createNewFolder();
+    void createNewFile(const QString &defaultName);
     void cutSelected();
     void copySelected();
     void pasteClipboard();
@@ -82,13 +85,15 @@ private:
     bool changesBlocked() const { return m_readOnly || m_inArchive; }
     void openArchiveEntry(const QString &archiveEntryPath);
     void copyArchiveEntries(const QStringList &archiveEntryPaths);
+    void selectAndOfferRenameAfterScan(const QString &path);
+    void launchOpenWith(const CustomAction &action, const QString &filePath);
 
     FileSystemModel *m_model = nullptr;
     FileTreeView *m_view = nullptr;
     BreadcrumbBar *m_breadcrumb = nullptr;
     QCheckBox *m_readOnlyCheck = nullptr;
     QLineEdit *m_filterEdit = nullptr;
-    QCheckBox *m_filterRegexCheck = nullptr;
+    QComboBox *m_filterModeCombo = nullptr;
 
     QAction *m_backAction = nullptr;
     QAction *m_forwardAction = nullptr;

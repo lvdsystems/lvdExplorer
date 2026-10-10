@@ -4,6 +4,7 @@
 #include "ui/bookmarks/bookmarkmanager.h"
 #include "ui/bookmarks/bookmarkspanel.h"
 #include "ui/dialogs/aboutdialog.h"
+#include "ui/dialogs/customactionsdialog.h"
 #include "ui/dialogs/foldercomparedialog.h"
 #include "ui/dialogs/sessionmanagerdialog.h"
 #include "ui/dialogs/shortcuteditordialog.h"
@@ -186,6 +187,13 @@ void MainWindow::setupMenus()
         dialog->show();
     });
 
+    QAction *customActionsAction = new QAction(tr("&Custom Actions..."), this);
+    connect(customActionsAction, &QAction::triggered, this, [this] {
+        auto *dialog = new CustomActionsDialog(this);
+        dialog->setAttribute(Qt::WA_DeleteOnClose);
+        dialog->show();
+    });
+
     // Pane layout actions are created here (before the toolbar) so the
     // *same* QAction instances can be added to both the toolbar and the
     // View menu -- one flips, the other follows, with no separate
@@ -233,6 +241,7 @@ void MainWindow::setupMenus()
     toolsMenu->addAction(compareFoldersAction);
     toolsMenu->addSeparator();
     toolsMenu->addAction(shortcutsAction);
+    toolsMenu->addAction(customActionsAction);
 
     QMenu *viewMenu = menuBar()->addMenu(tr("&View"));
     viewMenu->addAction(onePane);

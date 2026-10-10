@@ -36,7 +36,9 @@ class FileSystemModel : public QAbstractTableModel
 
 public:
     enum Column { NameColumn = 0, SizeColumn, TypeColumn, ModifiedColumn, ColumnCount };
-    enum class FilterMode { Substring, Regex };
+    // Wildcard: "*"/"?" matched against the whole file name, same as
+    // SearchOptions::Mode::Wildcard.
+    enum class FilterMode { Substring, Regex, Wildcard };
 
     explicit FileSystemModel(QObject *parent = nullptr);
 
@@ -94,6 +96,7 @@ private:
     void applySort();
     bool hasActiveFilter() const { return !m_filterText.isEmpty(); }
     bool passesFilter(const FileEntry &entry) const;
+    void updateFilterRegex();
     void rebuildVisibleRows();
     int actualIndexForRow(int row) const;
     const FileEntry *entryForRow(int row) const;

@@ -25,9 +25,13 @@
 - **Multi-pane, multi-tab browsing** — 1, 2 (Commander-style side-by-side,
   or stacked), or 4 panes, each with its own tab bar; quick-switch icons
   and `Ctrl+1`/`2`/`3`/`4`.
-- **Fast on purpose** — directory scans run off the UI thread and stream
-  in as they complete, so a slow network share or a folder with 100k+
-  files never freezes the app.
+- **Built to outpace Explorer and native desktop file managers on the
+  cases that make them stutter** — directory scans, the instant filter,
+  and search all run off the UI thread and stream results in as they're
+  found, so a slow network share or a 100k+-file folder never blocks the
+  window the way Explorer's own listing (or GNOME/KDE's file managers)
+  can. See [PERFORMANCE.md](PERFORMANCE.md) for the replicable benchmark
+  suite and measured numbers.
 - **Session save/restore** — window layout, every pane's tabs, sort
   order, and columns come back on next launch; named sessions via
   **Session → Sessions...**.
@@ -42,6 +46,10 @@
 - **File ops** — batch rename (pattern or find/replace), MD5/SHA-1/SHA-256
   checksums, folder compare, new folder, all via the same cancelable job
   queue as copy/move/delete.
+- **Custom Actions** — define your own "New File" templates and
+  per-extension "Open With" entries (e.g. `.zip`/`.7z` with an external
+  7-Zip) from **Tools → Custom Actions...**; off by one toggle if you
+  don't want the extra context-menu entries.
 - **Per-pane read-only lock** — a checkbox that blocks delete/rename/move
   in that pane without a separate "are you sure" for every click.
 - **Light/dark theming** and a **keyboard shortcut editor** — every
@@ -96,6 +104,22 @@ Covers the async search engine, the copy/move/delete job queue (including
 the read-only-lock rejection paths), folder comparison, and the keyboard
 shortcut registry.
 
+## Performance
+
+```
+cmake --build build --target perftest --config Release
+build/Release/perftest.exe
+```
+
+A replicable `QBENCHMARK`-based suite (`tests/perftest.cpp`) covering pane
+load, instant filter, filename search, selection, navigation, and
+refresh-while-selected timings, modeled on the category breakdown
+[RoyiFileManager](https://github.com/RoyiAvital/RoyiFileManager) publishes
+for its own releases. It's a timing report rather than a pass/fail check,
+so it isn't part of `ctest` — build and run it directly, always against a
+**Release** build. See [PERFORMANCE.md](PERFORMANCE.md) for methodology
+and results.
+
 ## Packaging (Linux)
 
 ```
@@ -109,25 +133,66 @@ run (cached under `packaging/linux/tools/`, not vendored), and writes
 above.
 
 An AppImage is only as portable as the oldest glibc/libstdc++ it was
-built against, so the release published on the newest build machine
-available (glibc 2.39+) won't run on something like Ubuntu 20.04. Two
-optional env vars build a second, older-baseline AppImage instead of
-replacing the default one:
+*linked* against, so the release published on the newest build machine
+available (glibc 2.39+) won't run on something like Ubuntu 20.04/22.04.
+A second, older-baseline AppImage is built for that:
 
 ```
-QT_PREFIX_PATH=/opt/qt/6.5.3/gcc_64 OUTPUT_SUFFIX=ubuntu2004 \
-    bash packaging/linux/build-appimage.sh
+bash packaging/linux/build-appimage-legacy-docker.sh
 ```
 
-`QT_PREFIX_PATH` points the build at a non-system Qt (e.g. an
-[aqtinstall](https://github.com/miurahr/aqtinstall) prefix, needed on a
-base old enough to predate Qt6 in its own package repos), and
-`OUTPUT_SUFFIX` keeps the two builds' build directories and output
-filenames from colliding. The published `lvdExplorer-<version>-x86_64-
-ubuntu2004.AppImage` was built this way (Ubuntu 20.04 + Qt 6.5.3),
-covering roughly Ubuntu 20.04+/Debian 11+/Fedora 31+ and similar; the
-plain `lvdExplorer-<version>-x86_64.AppImage` covers the newest distros
-but needs glibc 2.39+.
+This needs only Docker — it builds inside an actual `ubuntu:20.04`
+container (installing CMake, Qt 6.5.3 via
+[aqtinstall](https://github.com/miurahr/aqtinstall), and the rest of the
+build deps inside it on first run; cached under
+`~/.cache/lvdexplorer-docker-qt` after that) and writes
+`lvdExplorer-<version>-x86_64-glibc2.31.AppImage` to `dist/` — named
+after the actual glibc version linked against (detected at build time,
+not hardcoded) rather than the distro, since glibc compatibility is what
+actually determines where it runs and that naming doesn't imply a false
+promise about any other distro or version. Covers roughly Ubuntu
+20.04+/Debian 11+/Fedora 31+ and similar. The plain
+`lvdExplorer-<version>-x86_64.AppImage` covers the newest distros but
+needs glibc 2.39+.
+
+It has to be a genuine Ubuntu 20.04 build environment, not just a
+pointer at an older Qt — this one took a real-world failure to learn.
+`packaging/linux/build-appimage.sh`'s `QT_PREFIX_PATH`/`OUTPUT_SUFFIX`
+env vars look like they'd do the same thing by pointing the build at a
+downloaded Qt 6.5.3 while still compiling on whatever host is running
+the script, and a 0.4.0 release built exactly that way (on a Debian 13
+host) did pass local testing. It then failed on a real Ubuntu 22.04
+machine with `GLIBC_2.38`/`GLIBC_2.39` "version not found" errors —
+*newer* requirements than Ubuntu 22.04 itself ships, let alone 20.04.
+linuxdeploy's Qt plugin only bundles Qt's own libraries; everything an
+AppImage normally expects the host to already have (libc, libstdc++,
+libsystemd, libicu, libglib, ...) still gets linked from whatever's
+actually installed on the machine doing the compiling. Building inside
+an actual `ubuntu:20.04` container is what makes those link against
+Ubuntu 20.04's own versions instead. Confirmed fixed by checking the
+rebuilt binary's highest required symbol versions
+(`objdump -T dist-extracted/usr/bin/lvdExplorer | grep -oE 'GLIBC_[0-9.]+' | sort -V`
+dropped from 2.39 to 2.14) and by running the result on that same real
+Ubuntu 22.04 machine.
+
+### .deb
+
+```
+bash packaging/linux/build-deb.sh
+```
+
+Writes `lvdexplorer_<version>_<arch>.deb` to `dist/`, hand-rolled with
+`dpkg-deb` rather than CPack. Unlike the AppImage, this is a *thin*
+package — it depends on the build machine's own Qt6 and libarchive via
+`apt` (detected from the actual linked binary with `ldd` + `dpkg -S`,
+not hardcoded package names, since those have changed across Debian/
+Ubuntu releases) rather than bundling them, which is the normal shape for
+a `.deb` and keeps it small. That also means a `.deb` built here only
+targets the distro release it was built on (or a close match) — there's
+no `OUTPUT_SUFFIX`/`QT_PREFIX_PATH` legacy-baseline option the way the
+AppImage has one, since "works on an older glibc" isn't something a thin
+package can promise. Needs `dpkg-deb` in addition to the AppImage's build
+dependencies (already present on Debian/Ubuntu by default).
 
 ## Packaging (Windows)
 

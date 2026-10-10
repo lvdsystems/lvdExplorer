@@ -17,6 +17,10 @@ public:
 
     virtual void showProperties(const QStringList &paths, QWidget *parentWidget) = 0;
 
+    // An empty paths list means "no selection" -- a right-click on empty
+    // space in the pane -- and shows parentDir's own background menu
+    // (Explorer's New/Paste/view-options set) rather than a per-item one.
+    //
     // Returns false if native shell context menus aren't available on this
     // platform/build (Linux v1, per §7's documented scope decision -- no
     // cross-desktop-environment equivalent exists). The caller's own menu

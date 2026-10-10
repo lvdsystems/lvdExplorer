@@ -185,8 +185,7 @@ void FileSystemModel::setFilterText(const QString &text)
 
     beginResetModel();
     m_filterText = text;
-    if (m_filterMode == FilterMode::Regex)
-        m_filterRegex.setPattern(text);
+    updateFilterRegex();
     rebuildVisibleRows();
     endResetModel();
 }
@@ -198,17 +197,29 @@ void FileSystemModel::setFilterMode(FilterMode mode)
 
     beginResetModel();
     m_filterMode = mode;
-    if (mode == FilterMode::Regex)
-        m_filterRegex.setPattern(m_filterText);
+    updateFilterRegex();
     rebuildVisibleRows();
     endResetModel();
+}
+
+void FileSystemModel::updateFilterRegex()
+{
+    if (m_filterMode == FilterMode::Regex)
+        m_filterRegex.setPattern(m_filterText);
+    else if (m_filterMode == FilterMode::Wildcard)
+        m_filterRegex.setPattern(QRegularExpression::wildcardToRegularExpression(m_filterText));
+    // Wildcard matching is always case-insensitive -- there's no case
+    // toggle on the instant filter box, and case-insensitive is what every
+    // Windows user expects from a filename wildcard like "*.TXT".
+    if (m_filterMode == FilterMode::Wildcard)
+        m_filterRegex.setPatternOptions(QRegularExpression::CaseInsensitiveOption);
 }
 
 bool FileSystemModel::passesFilter(const FileEntry &entry) const
 {
     if (m_filterText.isEmpty())
         return true;
-    if (m_filterMode == FilterMode::Regex)
+    if (m_filterMode == FilterMode::Regex || m_filterMode == FilterMode::Wildcard)
         return m_filterRegex.isValid() && m_filterRegex.match(entry.name).hasMatch();
     return entry.name.contains(m_filterText, Qt::CaseInsensitive);
 }

@@ -15,6 +15,21 @@
 #   OUTPUT_SUFFIX    - appended to the build dir and output filename
 #                      (e.g. "ubuntu2004") so the two builds' artifacts
 #                      and intermediate CMake caches never collide.
+#
+# These two vars alone do NOT make the result genuinely compatible with
+# that older base unless this script is *also actually running on* that
+# base (e.g. inside a matching Docker container) -- linuxdeploy's Qt
+# plugin only bundles Qt's own libraries, so everything else (libc,
+# libstdc++, libsystemd, libicu, libglib, ...) still links against
+# whatever's installed on the real machine/container compiling this.
+# Pointing QT_PREFIX_PATH at an old Qt while compiling on a newer host
+# produces something that *looks* like it targets the old base but
+# actually requires that newer host's glibc -- this happened for real
+# with a Debian-13-built "Ubuntu 20.04" AppImage that then failed on an
+# actual Ubuntu 22.04 machine. build-appimage-legacy-docker.sh in this
+# same directory runs this script inside a real ubuntu:20.04 container
+# for exactly this reason; use it rather than these two env vars directly
+# unless you already have a genuinely matching build environment.
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

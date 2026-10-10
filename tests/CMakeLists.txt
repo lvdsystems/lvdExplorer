@@ -37,6 +37,16 @@ target_link_libraries(checksumtasktest PRIVATE lvdCore Qt6::Test)
 add_test(NAME ChecksumTaskTest COMMAND checksumtasktest)
 
 find_package(LibArchive 3.4 REQUIRED)
+qt_add_executable(customactionmanagertest customactionmanagertest.cpp)
+target_link_libraries(customactionmanagertest PRIVATE lvdUi Qt6::Test)
+add_test(NAME CustomActionManagerTest COMMAND customactionmanagertest)
+
 qt_add_executable(archivereadertest archivereadertest.cpp)
 target_link_libraries(archivereadertest PRIVATE lvdCore LibArchive::LibArchive Qt6::Test)
 add_test(NAME ArchiveReaderTest COMMAND archivereadertest)
+
+# Deliberately not add_test()'d -- see perftest.cpp's doc comment. It's a
+# QBENCHMARK-based timing suite, not a pass/fail check, and each run takes
+# far longer than the rest of the suite combined; run it directly instead.
+qt_add_executable(perftest perftest.cpp)
+target_link_libraries(perftest PRIVATE lvdCore Qt6::Test)

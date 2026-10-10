@@ -58,6 +58,7 @@ FinderPanel::FinderPanel(QWidget *parent)
     m_modeCombo = new QComboBox(nameTab);
     m_modeCombo->addItem(tr("Simple (substring)"));
     m_modeCombo->addItem(tr("Regular expression"));
+    m_modeCombo->addItem(tr("Wildcard (*, ?)"));
 
     auto *nameForm = new QFormLayout;
     nameForm->addRow(tr("Find:"), m_patternEdit);
@@ -187,7 +188,17 @@ void FinderPanel::startNameSearch()
     SearchOptions options;
     options.rootPath = root;
     options.pattern = pattern;
-    options.mode = m_modeCombo->currentIndex() == 1 ? SearchOptions::Mode::Regex : SearchOptions::Mode::Substring;
+    switch (m_modeCombo->currentIndex()) {
+    case 1:
+        options.mode = SearchOptions::Mode::Regex;
+        break;
+    case 2:
+        options.mode = SearchOptions::Mode::Wildcard;
+        break;
+    default:
+        options.mode = SearchOptions::Mode::Substring;
+        break;
+    }
     options.caseSensitive = m_caseSensitiveCheck->isChecked();
     options.recursive = m_recursiveCheck->isChecked();
 

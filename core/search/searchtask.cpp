@@ -15,8 +15,10 @@ SearchTask::SearchTask(SearchOptions options, int generation, QSharedPointer<QAt
 {
     setAutoDelete(true);
 
-    if (m_options.mode == SearchOptions::Mode::Regex) {
-        m_regex.setPattern(m_options.pattern);
+    if (m_options.mode == SearchOptions::Mode::Regex || m_options.mode == SearchOptions::Mode::Wildcard) {
+        m_regex.setPattern(m_options.mode == SearchOptions::Mode::Wildcard
+                                ? QRegularExpression::wildcardToRegularExpression(m_options.pattern)
+                                : m_options.pattern);
         if (!m_options.caseSensitive)
             m_regex.setPatternOptions(QRegularExpression::CaseInsensitiveOption);
     }
@@ -24,7 +26,7 @@ SearchTask::SearchTask(SearchOptions options, int generation, QSharedPointer<QAt
 
 bool SearchTask::matches(const QString &name) const
 {
-    if (m_options.mode == SearchOptions::Mode::Regex)
+    if (m_options.mode == SearchOptions::Mode::Regex || m_options.mode == SearchOptions::Mode::Wildcard)
         return m_regex.isValid() && m_regex.match(name).hasMatch();
     return name.contains(m_options.pattern, m_options.caseSensitive ? Qt::CaseSensitive : Qt::CaseInsensitive);
 }

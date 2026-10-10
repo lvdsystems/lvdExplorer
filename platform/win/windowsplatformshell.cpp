@@ -78,6 +78,31 @@ bool buildContextMenu(const QStringList &absolutePaths, ComPtr<IContextMenu> &co
     return SUCCEEDED(hr);
 }
 
+// The folder's own background context menu (Explorer's New/Paste/view
+// options when you right-click empty space) comes from a different COM path
+// than per-item menus: CreateViewObject on the folder itself rather than
+// GetUIObjectOf on child PIDLs.
+bool buildBackgroundContextMenu(const QString &folderPath, HWND owner, ComPtr<IContextMenu> &contextMenu,
+                                 std::vector<ItemIdListPtr> &pidlStorage)
+{
+    const std::wstring wpath = QDir::toNativeSeparators(folderPath).toStdWString();
+
+    ITEMIDLIST *rawPidl = nullptr;
+    if (FAILED(SHParseDisplayName(wpath.c_str(), nullptr, &rawPidl, 0, nullptr)) || !rawPidl)
+        return false;
+    pidlStorage.emplace_back(rawPidl);
+
+    ComPtr<IShellFolder> desktop;
+    if (FAILED(SHGetDesktopFolder(&desktop)))
+        return false;
+
+    ComPtr<IShellFolder> folder;
+    if (FAILED(desktop->BindToObject(pidlStorage.back().get(), nullptr, IID_PPV_ARGS(&folder))))
+        return false;
+
+    return SUCCEEDED(folder->CreateViewObject(owner, IID_PPV_ARGS(&contextMenu)));
+}
+
 void showPropertiesForSingle(const QString &path, HWND owner)
 {
     const std::wstring nativePath = QDir::toNativeSeparators(path).toStdWString();
@@ -145,14 +170,17 @@ void WindowsPlatformShell::showProperties(const QStringList &paths, QWidget *par
 bool WindowsPlatformShell::showNativeContextMenu(const QStringList &paths, const QString &parentDir,
                                                   const QPoint &globalPos, QWidget *parentWidget)
 {
-    Q_UNUSED(parentDir);
-    if (paths.isEmpty())
-        return false;
+    const HWND hwnd = parentWidget ? reinterpret_cast<HWND>(parentWidget->winId()) : GetActiveWindow();
 
     ComPtr<IContextMenu> contextMenu;
     std::vector<ItemIdListPtr> pidlStorage;
-    if (!buildContextMenu(paths, contextMenu, pidlStorage))
-        return false;
+    if (paths.isEmpty()) {
+        if (parentDir.isEmpty() || !buildBackgroundContextMenu(parentDir, hwnd, contextMenu, pidlStorage))
+            return false;
+    } else {
+        if (!buildContextMenu(paths, contextMenu, pidlStorage))
+            return false;
+    }
 
     HMENU hmenu = CreatePopupMenu();
     if (!hmenu)
@@ -163,7 +191,6 @@ bool WindowsPlatformShell::showNativeContextMenu(const QStringList &paths, const
         return false;
     }
 
-    const HWND hwnd = parentWidget ? reinterpret_cast<HWND>(parentWidget->winId()) : GetActiveWindow();
     // TrackPopupMenuEx needs the owner to be the foreground window for the
     // menu to dismiss correctly on an outside click.
     SetForegroundWindow(hwnd);

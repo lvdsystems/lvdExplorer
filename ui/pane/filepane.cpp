@@ -10,6 +10,7 @@
 #include "platform/platformshell.h"
 #include "ui/bookmarks/bookmarkmanager.h"
 #include "ui/clipboard/fileclipboard.h"
+#include "ui/customactions/customactionmanager.h"
 #include "ui/dialogs/batchrenamedialog.h"
 #include "ui/dialogs/checksumdialog.h"
 #include "ui/dialogs/progressdialog.h"
@@ -21,6 +22,7 @@
 #include <QAbstractItemDelegate>
 #include <QAction>
 #include <QCheckBox>
+#include <QComboBox>
 #include <QCursor>
 #include <QDesktopServices>
 #include <QDir>
@@ -32,8 +34,10 @@
 #include <QLineEdit>
 #include <QLocale>
 #include <QMenu>
+#include <QHash>
 #include <QMessageBox>
 #include <QPointer>
+#include <QProcess>
 #include <QStorageInfo>
 #include <QStyle>
 #include <QTemporaryDir>
@@ -60,6 +64,27 @@ QString newArchiveTempFolder()
     const QString folder = QDir(archiveTempRoot()).filePath(QUuid::createUuid().toString(QUuid::WithoutBraces));
     QDir().mkpath(folder);
     return folder;
+}
+
+// "name.ext" -> "name (2).ext", skipping already-taken numbers. Shared by
+// New Folder and every New File custom action.
+QString uniqueDestinationName(const QDir &dir, const QString &desiredName)
+{
+    if (!QFileInfo::exists(dir.filePath(desiredName)))
+        return desiredName;
+
+    const QFileInfo info(desiredName);
+    const QString suffix = info.suffix();
+    const QString baseName = suffix.isEmpty() ? desiredName : info.completeBaseName();
+
+    int n = 2;
+    QString candidate;
+    do {
+        candidate = suffix.isEmpty() ? QStringLiteral("%1 (%2)").arg(baseName).arg(n)
+                                      : QStringLiteral("%1 (%2).%3").arg(baseName).arg(n).arg(suffix);
+        ++n;
+    } while (QFileInfo::exists(dir.filePath(candidate)));
+    return candidate;
 }
 
 } // namespace
@@ -109,11 +134,15 @@ FilePane::FilePane(QWidget *parent)
     m_filterEdit->setPlaceholderText(tr("Filter this folder…"));
     m_filterEdit->setClearButtonEnabled(true);
     m_filterEdit->setMaximumWidth(220);
-    m_filterRegexCheck = new QCheckBox(tr("Regex"), addressBar);
-    m_filterRegexCheck->setToolTip(tr("Treat the filter text as a regular expression instead of plain substring."));
+    m_filterModeCombo = new QComboBox(addressBar);
+    m_filterModeCombo->addItem(tr("Substring"));
+    m_filterModeCombo->addItem(tr("Regex"));
+    m_filterModeCombo->addItem(tr("Wildcard"));
+    m_filterModeCombo->setToolTip(
+        tr("How the filter text is matched: plain substring, regular expression, or \"*\"/\"?\" wildcards."));
     addressLayout->addWidget(m_breadcrumb, 1);
     addressLayout->addWidget(m_filterEdit);
-    addressLayout->addWidget(m_filterRegexCheck);
+    addressLayout->addWidget(m_filterModeCombo);
 
     auto *toolBar = new QToolBar(this);
     toolBar->setIconSize(QSize(16, 16));
@@ -218,8 +247,11 @@ FilePane::FilePane(QWidget *parent)
 
     connect(m_filterEdit, &QLineEdit::textChanged, m_model, &FileSystemModel::setFilterText);
     connect(m_filterEdit, &QLineEdit::textChanged, this, [this] { updateStatusText(); });
-    connect(m_filterRegexCheck, &QCheckBox::toggled, this, [this](bool checked) {
-        m_model->setFilterMode(checked ? FileSystemModel::FilterMode::Regex : FileSystemModel::FilterMode::Substring);
+    connect(m_filterModeCombo, &QComboBox::currentIndexChanged, this, [this](int index) {
+        const auto mode = index == 1   ? FileSystemModel::FilterMode::Regex
+                         : index == 2  ? FileSystemModel::FilterMode::Wildcard
+                                       : FileSystemModel::FilterMode::Substring;
+        m_model->setFilterMode(mode);
     });
 
     connect(m_view, &FileTreeView::activated, this, &FilePane::onActivated);
@@ -419,13 +451,41 @@ QString FilePane::pathForIndex(const QModelIndex &index) const
 void FilePane::showContextMenu(const QPoint &pos)
 {
     const auto indexes = selectedNameIndexes();
+    const bool customActionsEnabled = CustomActionManager::instance().isEnabled() && !m_inArchive;
 
     QMenu menu(this);
-    QAction *newFolderAction = menu.addAction(IconFactory::newFolder(), tr("New Folder"));
-    newFolderAction->setEnabled(!m_inArchive);
+
+    QHash<QAction *, CustomAction> customNewFileActions;
+    const QList<CustomAction> newFileActions =
+        customActionsEnabled ? CustomActionManager::instance().newFileActions() : QList<CustomAction>();
+
+    QAction *newFolderAction = nullptr;
+    if (newFileActions.isEmpty()) {
+        newFolderAction = menu.addAction(IconFactory::newFolder(), tr("New Folder"));
+        newFolderAction->setEnabled(!m_inArchive);
+    } else {
+        // At least one "New File" custom action is defined: fold "New
+        // Folder" into a "New" submenu alongside them, same shape as
+        // Explorer's New menu.
+        QMenu *newMenu = menu.addMenu(IconFactory::newFolder(), tr("New"));
+        newFolderAction = newMenu->addAction(tr("Folder"));
+        for (const CustomAction &action : newFileActions)
+            customNewFileActions.insert(newMenu->addAction(action.name), action);
+    }
     menu.addSeparator();
     QAction *openAction = menu.addAction(tr("Open"));
     openAction->setEnabled(!indexes.isEmpty());
+
+    QHash<QAction *, CustomAction> customOpenWithActions;
+    if (customActionsEnabled && indexes.size() == 1) {
+        const QList<CustomAction> matches = CustomActionManager::instance().openWithActionsFor(m_model->filePath(indexes.first()));
+        if (!matches.isEmpty()) {
+            QMenu *openWithMenu = menu.addMenu(tr("Open With"));
+            for (const CustomAction &action : matches)
+                customOpenWithActions.insert(openWithMenu->addAction(action.name), action);
+        }
+    }
+
     const bool singleFolderSelected = indexes.size() == 1 && isDirIndex(indexes.first());
     QAction *bookmarkAction = menu.addAction(
         IconFactory::bookmark(),
@@ -450,8 +510,11 @@ void FilePane::showContextMenu(const QPoint &pos)
     menu.addSeparator();
     QAction *terminalAction = menu.addAction(IconFactory::terminal(), tr("Open Terminal Here"));
     terminalAction->setEnabled(!m_inArchive);
+    // Enabled with no selection too: an empty-space right-click shows the
+    // folder's own background menu (Explorer's New/Paste/view options),
+    // same as right-clicking empty space in Explorer itself.
     QAction *nativeMenuAction = menu.addAction(IconFactory::shellMenu(), tr("More Options (Shell Menu)..."));
-    nativeMenuAction->setEnabled(!indexes.isEmpty() && !m_inArchive);
+    nativeMenuAction->setEnabled(!m_inArchive);
     menu.addSeparator();
     QAction *propertiesAction = menu.addAction(IconFactory::properties(), tr("Properties"));
     propertiesAction->setEnabled(!m_inArchive);
@@ -463,6 +526,10 @@ void FilePane::showContextMenu(const QPoint &pos)
     QAction *chosen = menu.exec(globalPos);
     if (chosen == newFolderAction)
         createNewFolder();
+    else if (customNewFileActions.contains(chosen))
+        createNewFile(customNewFileActions.value(chosen).newFileName);
+    else if (customOpenWithActions.contains(chosen))
+        launchOpenWith(customOpenWithActions.value(chosen), m_model->filePath(indexes.first()));
     else if (chosen == openAction && !indexes.isEmpty())
         onActivated(indexes.first());
     else if (chosen == bookmarkAction)
@@ -489,6 +556,25 @@ void FilePane::showContextMenu(const QPoint &pos)
         deleteSelected();
 }
 
+void FilePane::selectAndOfferRenameAfterScan(const QString &path)
+{
+    // Select and immediately offer rename, matching Explorer/Nautilus
+    // convention -- the auto-numbered name is just a placeholder. The scan
+    // that refresh() kicks off is async, so the selection has to wait for
+    // it to actually populate the row; SingleShotConnection means this
+    // doesn't accumulate across repeated clicks. Skips the rename step in a
+    // read-only pane -- renameSelected() would just reject it right back,
+    // which would read as a confusing "error" immediately after a
+    // successful creation.
+    connect(m_model, &FileSystemModel::scanFinished, this,
+            [this, path](int, int) {
+                selectPath(path);
+                if (!m_readOnly)
+                    renameSelected();
+            },
+            Qt::SingleShotConnection);
+}
+
 void FilePane::createNewFolder()
 {
     // Creating new content in a locked pane is deliberately not blocked
@@ -499,36 +585,54 @@ void FilePane::createNewFolder()
         return;
     }
 
-    const QString baseName = tr("New Folder");
     QDir dir(m_currentPath);
-
-    QString candidateName = baseName;
-    int suffix = 2;
-    while (QFileInfo::exists(dir.filePath(candidateName)))
-        candidateName = tr("%1 (%2)").arg(baseName).arg(suffix++);
-
+    const QString candidateName = uniqueDestinationName(dir, tr("New Folder"));
     if (!dir.mkdir(candidateName)) {
         QMessageBox::warning(this, tr("New Folder"), tr("Could not create the new folder."));
         return;
     }
 
-    const QString newPath = dir.filePath(candidateName);
-    // Select and immediately offer rename, matching Explorer/Nautilus
-    // convention -- the auto-numbered name is just a placeholder. The scan
-    // that refresh() kicks off is async, so the selection has to wait for
-    // it to actually populate the row; SingleShotConnection means this
-    // doesn't accumulate across repeated New Folder clicks. Skips the
-    // rename step in a read-only pane -- renameSelected() would just
-    // reject it right back, which would read as a confusing "error"
-    // immediately after a successful creation.
-    connect(m_model, &FileSystemModel::scanFinished, this,
-            [this, newPath](int, int) {
-                selectPath(newPath);
-                if (!m_readOnly)
-                    renameSelected();
-            },
-            Qt::SingleShotConnection);
+    selectAndOfferRenameAfterScan(dir.filePath(candidateName));
     refresh();
+}
+
+void FilePane::createNewFile(const QString &defaultName)
+{
+    if (m_inArchive) {
+        showReadOnlyNotice(tr("Pane is read-only: new file is blocked."));
+        return;
+    }
+
+    QDir dir(m_currentPath);
+    const QString candidateName = uniqueDestinationName(dir, defaultName);
+    QFile file(dir.filePath(candidateName));
+    if (!file.open(QIODevice::WriteOnly)) {
+        QMessageBox::warning(this, tr("New File"), tr("Could not create the new file."));
+        return;
+    }
+    file.close();
+
+    selectAndOfferRenameAfterScan(dir.filePath(candidateName));
+    refresh();
+}
+
+void FilePane::launchOpenWith(const CustomAction &action, const QString &filePath)
+{
+    QStringList args;
+    const QString trimmedArguments = action.arguments.trimmed();
+    if (trimmedArguments.isEmpty()) {
+        args << filePath;
+    } else {
+        // "%1" is the one placeholder this supports; a command with its own
+        // quoting needs can just omit it and rely on the plain-path
+        // fallback above instead (Arguments left empty).
+        QString expanded = trimmedArguments;
+        expanded.replace(QStringLiteral("%1"), filePath);
+        args = QProcess::splitCommand(expanded);
+    }
+
+    if (!QProcess::startDetached(action.programPath, args))
+        QMessageBox::warning(this, tr("lvdExplorer"), tr("Could not launch “%1”.").arg(action.programPath));
 }
 
 void FilePane::onEditorClosed()

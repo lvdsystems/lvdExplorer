@@ -14,6 +14,7 @@ class SearchEngineTest : public QObject
 private slots:
     void findsSubstringMatchRecursively();
     void findsRegexMatch();
+    void findsWildcardMatch();
     void respectsNonRecursiveScope();
     void cancelStopsFurtherMatches();
 };
@@ -87,6 +88,49 @@ void SearchEngineTest::findsRegexMatch()
 
     QVERIFY(finishedSpy.wait(5000));
     QCOMPARE(allMatches.size(), 2);
+}
+
+void SearchEngineTest::findsWildcardMatch()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    const QString root = makeTempTree(dir);
+
+    SearchEngine engine;
+    QSignalSpy finishedSpy(&engine, &SearchEngine::finished);
+    QVector<FileEntry> allMatches;
+    connect(&engine, &SearchEngine::matchesReady,
+            [&](const QVector<FileEntry> &m) { allMatches += m; });
+
+    SearchOptions options;
+    options.rootPath = root;
+    // "*" and "?" matched against the whole name, same as Explorer's own
+    // filename wildcards -- unlike plain substring, "needle*.txt" must
+    // match from the start.
+    options.pattern = QStringLiteral("needle*.txt");
+    options.mode = SearchOptions::Mode::Wildcard;
+    options.recursive = true;
+    engine.start(options);
+
+    QVERIFY(finishedSpy.wait(5000));
+
+    QCOMPARE(allMatches.size(), 2);
+    QStringList names;
+    for (const auto &entry : allMatches)
+        names << entry.name;
+    QVERIFY(names.contains(QStringLiteral("needle.txt")));
+    QVERIFY(names.contains(QStringLiteral("needle_nested.txt")));
+
+    // A single "?" means exactly one character, so it must not match
+    // "unrelated.txt" or the multi-character "needle" names above.
+    allMatches.clear();
+    SearchOptions singleCharOptions = options;
+    singleCharOptions.pattern = QStringLiteral("?nrelated.txt");
+    QSignalSpy secondFinishedSpy(&engine, &SearchEngine::finished);
+    engine.start(singleCharOptions);
+    QVERIFY(secondFinishedSpy.wait(5000));
+    QCOMPARE(allMatches.size(), 1);
+    QCOMPARE(allMatches.first().name, QStringLiteral("unrelated.txt"));
 }
 
 void SearchEngineTest::respectsNonRecursiveScope()
