@@ -2,6 +2,7 @@
 
 #include "core/archive/archivereader.h"
 #include "core/fsmodel/archivescantask.h"
+#include "core/fsmodel/foldersizetask.h"
 
 #include <QDir>
 #include <QFileInfo>
@@ -94,6 +95,14 @@ void FileSystemModel::startScan()
 {
     if (m_cancelFlag)
         m_cancelFlag->storeRelaxed(1);
+
+    // The entries any in-flight FolderSizeTask is keyed to are about to be
+    // thrown away below; no point letting them keep computing for a
+    // directory that's no longer shown. startFolderSizeTasks() (called
+    // again once the new scan finishes) starts a fresh batch if needed.
+    if (m_folderSizeCancelFlag)
+        m_folderSizeCancelFlag->storeRelaxed(1);
+    ++m_folderSizeGeneration;
 
     // Every scan resets the view, which ends any inline edit in progress, so
     // there's nothing left to protect from a rescan once one starts.
@@ -282,6 +291,7 @@ void FileSystemModel::handleScanFinished(int generation, bool wasCancelled)
     if (!wasCancelled) {
         applySort();
         syncWatchedEntries();
+        startFolderSizeTasks();
     }
 
     int dirCount = 0;
@@ -308,6 +318,95 @@ qint64 FileSystemModel::sizeOf(const QModelIndex &index) const
 {
     const FileEntry *entry = entryForRow(index.row());
     return entry ? entry->size : -1;
+}
+
+void FileSystemModel::setCalculateFolderSizes(bool enabled)
+{
+    if (m_calculateFolderSizes == enabled)
+        return;
+    m_calculateFolderSizes = enabled;
+
+    if (enabled) {
+        startFolderSizeTasks();
+        return;
+    }
+
+    // Cancel whatever's in flight and bump the generation so any
+    // already-queued results that arrive after this point are ignored by
+    // handleFolderSizeReady() rather than reviving a size after it's been
+    // cleared below.
+    if (m_folderSizeCancelFlag)
+        m_folderSizeCancelFlag->storeRelaxed(1);
+    ++m_folderSizeGeneration;
+
+    bool anyCleared = false;
+    for (FileEntry &entry : m_entries) {
+        if (entry.isDir && entry.size != -1) {
+            entry.size = -1;
+            anyCleared = true;
+        }
+    }
+    if (!anyCleared)
+        return;
+    if (m_sortColumn == SizeColumn)
+        applySort();
+    else if (rowCount() > 0)
+        emit dataChanged(index(0, SizeColumn), index(rowCount() - 1, SizeColumn), {Qt::DisplayRole});
+}
+
+void FileSystemModel::startFolderSizeTasks()
+{
+    if (!m_calculateFolderSizes)
+        return;
+
+    // Invalidate any previous batch (a stale directory's tasks, or an
+    // earlier scan of this same one) before starting this one -- mirrors
+    // startScan()'s own cancel-then-fresh-generation pattern, just scoped
+    // to folder-size tasks specifically so toggling the feature off
+    // doesn't have to cancel an in-flight directory scan too.
+    if (m_folderSizeCancelFlag)
+        m_folderSizeCancelFlag->storeRelaxed(1);
+    ++m_folderSizeGeneration;
+    m_folderSizeCancelFlag = QSharedPointer<QAtomicInt>::create(0);
+
+    const int generation = m_folderSizeGeneration;
+    const QSharedPointer<QAtomicInt> cancelFlag = m_folderSizeCancelFlag;
+    for (const FileEntry &entry : std::as_const(m_entries)) {
+        if (!entry.isDir)
+            continue;
+        auto *task = new FolderSizeTask(entry.absolutePath, generation, cancelFlag);
+        connect(task, &FolderSizeTask::sizeReady, this, &FileSystemModel::handleFolderSizeReady);
+        QThreadPool::globalInstance()->start(task);
+    }
+}
+
+void FileSystemModel::handleFolderSizeReady(int generation, QString folderPath, qint64 size)
+{
+    if (generation != m_folderSizeGeneration || !m_calculateFolderSizes)
+        return;
+
+    for (int actualIndex = 0; actualIndex < m_entries.size(); ++actualIndex) {
+        FileEntry &entry = m_entries[actualIndex];
+        if (entry.absolutePath != folderPath)
+            continue;
+
+        entry.size = size;
+        if (m_sortColumn == SizeColumn) {
+            // Re-sorting on every streamed-in result (rather than just the
+            // row's own dataChanged) is what actually moves this folder to
+            // its correct position among the others now that its size is
+            // known -- the whole point of sorting by Size being meaningful
+            // for folders at all.
+            applySort();
+        } else {
+            const int row = hasActiveFilter() ? m_visibleRows.indexOf(actualIndex) : actualIndex;
+            if (row >= 0) {
+                const QModelIndex idx = index(row, SizeColumn);
+                emit dataChanged(idx, idx, {Qt::DisplayRole});
+            }
+        }
+        return;
+    }
 }
 
 bool FileSystemModel::removeEntry(const QString &absolutePath)
@@ -358,7 +457,11 @@ QVariant FileSystemModel::data(const QModelIndex &index, int role) const
         case NameColumn:
             return entry.name;
         case SizeColumn:
-            return entry.isDir ? QString() : formatSize(entry.size);
+            if (!entry.isDir)
+                return formatSize(entry.size);
+            if (!m_calculateFolderSizes)
+                return QString();
+            return entry.size < 0 ? tr("Calculating…") : formatSize(entry.size);
         case TypeColumn:
             return entry.isDir ? tr("File folder") : m_iconProvider.type(QFileInfo(entry.absolutePath));
         case ModifiedColumn:

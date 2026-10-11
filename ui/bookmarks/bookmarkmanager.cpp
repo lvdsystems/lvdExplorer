@@ -1,5 +1,7 @@
 #include "ui/bookmarks/bookmarkmanager.h"
 
+#include "core/session/portablesettings.h"
+
 #include <QDir>
 #include <QSettings>
 
@@ -18,7 +20,7 @@ BookmarkManager &BookmarkManager::instance()
 
 BookmarkManager::BookmarkManager()
 {
-    QSettings settings;
+    QSettings settings = portableAwareSettings();
     settings.beginGroup(settingsGroup());
     m_bookmarks = settings.value(QStringLiteral("paths")).toStringList();
     settings.endGroup();
@@ -50,7 +52,7 @@ void BookmarkManager::remove(const QString &path)
 
 void BookmarkManager::save()
 {
-    QSettings settings;
+    QSettings settings = portableAwareSettings();
     settings.beginGroup(settingsGroup());
     settings.setValue(QStringLiteral("paths"), m_bookmarks);
     settings.endGroup();

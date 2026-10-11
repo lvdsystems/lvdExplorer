@@ -19,6 +19,7 @@ QJsonObject tabToJson(const TabSessionState &tab)
     obj[QStringLiteral("path")] = tab.path;
     obj[QStringLiteral("headerState")] = QString::fromLatin1(tab.headerState.toBase64());
     obj[QStringLiteral("readOnly")] = tab.readOnly;
+    obj[QStringLiteral("calculateFolderSizes")] = tab.calculateFolderSizes;
     return obj;
 }
 
@@ -28,6 +29,7 @@ TabSessionState tabFromJson(const QJsonObject &obj)
     tab.path = obj.value(QStringLiteral("path")).toString();
     tab.headerState = QByteArray::fromBase64(obj.value(QStringLiteral("headerState")).toString().toLatin1());
     tab.readOnly = obj.value(QStringLiteral("readOnly")).toBool(false);
+    tab.calculateFolderSizes = obj.value(QStringLiteral("calculateFolderSizes")).toBool(false);
     return tab;
 }
 

@@ -1,5 +1,7 @@
 #include "ui/shortcuts/shortcutmanager.h"
 
+#include "core/session/portablesettings.h"
+
 #include <QAction>
 #include <QSettings>
 
@@ -20,7 +22,7 @@ ShortcutManager &ShortcutManager::instance()
 
 QKeySequence ShortcutManager::loadOverride(const QString &id, const QKeySequence &defaultSequence)
 {
-    QSettings settings;
+    QSettings settings = portableAwareSettings();
     settings.beginGroup(settingsGroup());
     const bool has = settings.contains(id);
     const QString saved = settings.value(id).toString();
@@ -34,7 +36,7 @@ QKeySequence ShortcutManager::loadOverride(const QString &id, const QKeySequence
 
 void ShortcutManager::save(const QString &id, const QKeySequence &sequence)
 {
-    QSettings settings;
+    QSettings settings = portableAwareSettings();
     settings.beginGroup(settingsGroup());
     settings.setValue(id, sequence.toString());
     settings.endGroup();
@@ -42,7 +44,7 @@ void ShortcutManager::save(const QString &id, const QKeySequence &sequence)
 
 void ShortcutManager::clearSaved(const QString &id)
 {
-    QSettings settings;
+    QSettings settings = portableAwareSettings();
     settings.beginGroup(settingsGroup());
     settings.remove(id);
     settings.endGroup();

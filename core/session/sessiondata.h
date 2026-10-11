@@ -16,6 +16,7 @@ struct TabSessionState
     // one round-trippable value, so there's no separate sortColumn/Order.
     QByteArray headerState;
     bool readOnly = false;
+    bool calculateFolderSizes = false;
 };
 
 struct PaneSessionState

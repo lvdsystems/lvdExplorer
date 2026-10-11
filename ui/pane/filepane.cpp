@@ -238,6 +238,13 @@ FilePane::FilePane(QWidget *parent)
     connect(m_readOnlyCheck, &QCheckBox::toggled, this, &FilePane::setReadOnly);
     toolBar->addWidget(m_readOnlyCheck);
 
+    m_calculateFolderSizesCheck = new QCheckBox(tr("Folder sizes"), toolBar);
+    m_calculateFolderSizesCheck->setToolTip(
+        tr("Computes each folder's total size in the background and makes the Size column sortable for folders "
+           "too. Off by default since walking every subfolder is real disk I/O a plain listing doesn't need."));
+    connect(m_calculateFolderSizesCheck, &QCheckBox::toggled, this, &FilePane::setCalculateFolderSizes);
+    toolBar->addWidget(m_calculateFolderSizesCheck);
+
     auto *layout = new QVBoxLayout(this);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
@@ -900,6 +907,16 @@ void FilePane::setReadOnly(bool readOnly)
     updateStatusText();
 }
 
+void FilePane::setCalculateFolderSizes(bool enabled)
+{
+    m_calculateFolderSizes = enabled;
+    m_model->setCalculateFolderSizes(enabled);
+
+    m_calculateFolderSizesCheck->blockSignals(true);
+    m_calculateFolderSizesCheck->setChecked(enabled);
+    m_calculateFolderSizesCheck->blockSignals(false);
+}
+
 void FilePane::showReadOnlyNotice(const QString &message)
 {
     QToolTip::showText(QCursor::pos(), message, this);
@@ -940,6 +957,7 @@ TabSessionState FilePane::captureState() const
     state.path = m_currentPath;
     state.headerState = m_view->header()->saveState();
     state.readOnly = m_readOnly;
+    state.calculateFolderSizes = m_calculateFolderSizes;
     return state;
 }
 
@@ -955,6 +973,7 @@ void FilePane::applyState(const TabSessionState &state)
         m_view->header()->setStretchLastSection(false);
     }
     setReadOnly(state.readOnly);
+    setCalculateFolderSizes(state.calculateFolderSizes);
 }
 
 void FilePane::navigateToAndSelect(const QString &folderPath, const QString &targetFilePath)

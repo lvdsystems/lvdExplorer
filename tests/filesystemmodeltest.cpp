@@ -1,5 +1,6 @@
 #include "core/fsmodel/filesystemmodel.h"
 
+#include <QDir>
 #include <QFile>
 #include <QSignalSpy>
 #include <QTemporaryDir>
@@ -14,6 +15,8 @@ private slots:
     void autoRefreshesWhenFileAddedExternally();
     void autoRefreshesWhenFileModifiedExternally();
     void wildcardFilterMatchesWholeName();
+    void folderSizesAreOffByDefaultAndComputeOnDemand();
+    void folderSizesAreClearedWhenDisabled();
 };
 
 void FileSystemModelTest::rowsAreDragAndDropEnabled()
@@ -137,6 +140,69 @@ void FileSystemModelTest::wildcardFilterMatchesWholeName()
     QCOMPARE(model.rowCount(), 1);
     QCOMPARE(model.filePath(model.index(0, FileSystemModel::NameColumn)),
              dir.filePath(QStringLiteral("report.txt")));
+}
+
+void FileSystemModelTest::folderSizesAreOffByDefaultAndComputeOnDemand()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    QDir root(dir.path());
+    QVERIFY(root.mkpath(QStringLiteral("sub/nested")));
+
+    auto writeFile = [](const QString &path, int byteCount) {
+        QFile file(path);
+        QVERIFY(file.open(QIODevice::WriteOnly));
+        file.write(QByteArray(byteCount, 'x'));
+    };
+    writeFile(root.filePath(QStringLiteral("sub/top.bin")), 100);
+    writeFile(root.filePath(QStringLiteral("sub/nested/deep.bin")), 50);
+
+    FileSystemModel model;
+    QSignalSpy finishedSpy(&model, &FileSystemModel::scanFinished);
+    model.setRootPath(dir.path());
+    QVERIFY(finishedSpy.wait(5000));
+    QCOMPARE(model.rowCount(), 1);
+
+    const QModelIndex sizeIndex = model.index(0, FileSystemModel::SizeColumn);
+    QVERIFY(model.isDir(model.index(0, FileSystemModel::NameColumn)));
+
+    // Off by default: no size shown, nothing to sort by.
+    QVERIFY(!model.calculateFolderSizes());
+    QCOMPARE(model.data(sizeIndex).toString(), QString());
+    QCOMPARE(model.sizeOf(model.index(0, FileSystemModel::NameColumn)), qint64(-1));
+
+    model.setCalculateFolderSizes(true);
+    QVERIFY(model.calculateFolderSizes());
+
+    // Recursive: both the direct child and the nested one count.
+    QVERIFY(QTest::qWaitFor(
+        [&] { return model.sizeOf(model.index(0, FileSystemModel::NameColumn)) == 150; }, 5000));
+    QCOMPARE(model.data(sizeIndex).toString(), QStringLiteral("150 bytes"));
+}
+
+void FileSystemModelTest::folderSizesAreClearedWhenDisabled()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+    QDir root(dir.path());
+    QVERIFY(root.mkpath(QStringLiteral("sub")));
+    QFile file(root.filePath(QStringLiteral("sub/a.bin")));
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    file.write(QByteArray(64, 'x'));
+    file.close();
+
+    FileSystemModel model;
+    QSignalSpy finishedSpy(&model, &FileSystemModel::scanFinished);
+    model.setRootPath(dir.path());
+    QVERIFY(finishedSpy.wait(5000));
+
+    model.setCalculateFolderSizes(true);
+    const QModelIndex nameIndex = model.index(0, FileSystemModel::NameColumn);
+    QVERIFY(QTest::qWaitFor([&] { return model.sizeOf(nameIndex) == 64; }, 5000));
+
+    model.setCalculateFolderSizes(false);
+    QCOMPARE(model.sizeOf(nameIndex), qint64(-1));
+    QCOMPARE(model.data(model.index(0, FileSystemModel::SizeColumn)).toString(), QString());
 }
 
 QTEST_MAIN(FileSystemModelTest)

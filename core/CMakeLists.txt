@@ -3,6 +3,8 @@ add_library(lvdCore STATIC
     fsmodel/directoryscantask.cpp
     fsmodel/drivelisttask.h
     fsmodel/drivelisttask.cpp
+    fsmodel/foldersizetask.h
+    fsmodel/foldersizetask.cpp
     fsmodel/filesystemmodel.h
     fsmodel/filesystemmodel.cpp
     ops/fileoprequest.h
@@ -18,6 +20,8 @@ add_library(lvdCore STATIC
     session/sessiondata.h
     session/sessionmanager.h
     session/sessionmanager.cpp
+    session/portablesettings.h
+    session/portablesettings.cpp
     search/searchoptions.h
     search/searchtask.h
     search/searchtask.cpp

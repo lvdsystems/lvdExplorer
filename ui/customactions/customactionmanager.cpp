@@ -1,5 +1,7 @@
 #include "ui/customactions/customactionmanager.h"
 
+#include "core/session/portablesettings.h"
+
 #include <QFileInfo>
 #include <QSettings>
 #include <QUuid>
@@ -86,7 +88,7 @@ void CustomActionManager::remove(const QString &id)
 
 void CustomActionManager::load()
 {
-    QSettings settings;
+    QSettings settings = portableAwareSettings();
     settings.beginGroup(settingsGroup());
 
     const bool initialized = settings.value(QStringLiteral("initialized"), false).toBool();
@@ -131,7 +133,7 @@ void CustomActionManager::seedDefaults()
 
 void CustomActionManager::save()
 {
-    QSettings settings;
+    QSettings settings = portableAwareSettings();
     settings.beginGroup(settingsGroup());
     settings.setValue(QStringLiteral("initialized"), true);
     settings.setValue(QStringLiteral("masterEnabled"), m_enabled);

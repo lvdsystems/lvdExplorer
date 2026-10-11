@@ -1,5 +1,7 @@
 #include "ui/theme/thememanager.h"
 
+#include "core/session/portablesettings.h"
+
 #include <QApplication>
 #include <QPalette>
 #include <QSettings>
@@ -86,7 +88,7 @@ void apply(Theme theme)
 
 Theme loadSaved()
 {
-    const QSettings settings;
+    const QSettings settings = portableAwareSettings();
     const QString name = settings.value(QStringLiteral("theme"), QStringLiteral("system")).toString();
     if (name == QStringLiteral("light"))
         return Theme::Light;
@@ -97,7 +99,7 @@ Theme loadSaved()
 
 void save(Theme theme)
 {
-    QSettings settings;
+    QSettings settings = portableAwareSettings();
     settings.setValue(QStringLiteral("theme"), themeSettingName(theme));
 }
 

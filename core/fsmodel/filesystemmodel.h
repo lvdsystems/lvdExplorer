@@ -63,6 +63,14 @@ public:
     QString filterText() const { return m_filterText; }
     FilterMode filterMode() const { return m_filterMode; }
 
+    // Off by default: walking every subfolder is real disk I/O that a
+    // plain directory listing doesn't need to pay for. When on, each
+    // folder's total recursive size streams in from its own background
+    // FolderSizeTask (see startFolderSizeTasks()) and the Size column
+    // becomes sortable for folders too.
+    void setCalculateFolderSizes(bool enabled);
+    bool calculateFolderSizes() const { return m_calculateFolderSizes; }
+
     QString filePath(const QModelIndex &index) const;
     bool isDir(const QModelIndex &index) const;
     qint64 sizeOf(const QModelIndex &index) const; // -1 for directories or an invalid index
@@ -90,6 +98,7 @@ private slots:
     void handleScanFinished(int generation, bool wasCancelled);
     void scheduleAutoRefresh();
     void onAutoRefreshTimeout();
+    void handleFolderSizeReady(int generation, QString folderPath, qint64 size);
 
 private:
     void startScan();
@@ -102,6 +111,7 @@ private:
     const FileEntry *entryForRow(int row) const;
     void watchRootDirectory();
     void syncWatchedEntries();
+    void startFolderSizeTasks();
 
     static bool rawLessThan(const FileEntry &a, const FileEntry &b, int column);
 
@@ -122,4 +132,8 @@ private:
     FilterMode m_filterMode = FilterMode::Substring;
     QRegularExpression m_filterRegex;
     bool m_readOnly = false;
+
+    bool m_calculateFolderSizes = false;
+    int m_folderSizeGeneration = 0;
+    QSharedPointer<QAtomicInt> m_folderSizeCancelFlag;
 };

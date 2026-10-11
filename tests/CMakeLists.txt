@@ -45,6 +45,10 @@ qt_add_executable(archivereadertest archivereadertest.cpp)
 target_link_libraries(archivereadertest PRIVATE lvdCore LibArchive::LibArchive Qt6::Test)
 add_test(NAME ArchiveReaderTest COMMAND archivereadertest)
 
+qt_add_executable(portablesettingstest portablesettingstest.cpp)
+target_link_libraries(portablesettingstest PRIVATE lvdCore Qt6::Test)
+add_test(NAME PortableSettingsTest COMMAND portablesettingstest)
+
 # Deliberately not add_test()'d -- see perftest.cpp's doc comment. It's a
 # QBENCHMARK-based timing suite, not a pass/fail check, and each run takes
 # far longer than the rest of the suite combined; run it directly instead.

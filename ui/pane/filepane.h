@@ -32,6 +32,9 @@ public:
     void setReadOnly(bool readOnly);
     bool isBrowsingArchive() const { return m_inArchive; }
 
+    bool calculateFolderSizes() const { return m_calculateFolderSizes; }
+    void setCalculateFolderSizes(bool enabled);
+
     // Used by FileTreeView to implement cross-pane drag & drop (§8) without
     // routing file-system operations through QAbstractItemModel's
     // mimeData()/dropMimeData(), which assumes reordering within one model.
@@ -92,6 +95,7 @@ private:
     FileTreeView *m_view = nullptr;
     BreadcrumbBar *m_breadcrumb = nullptr;
     QCheckBox *m_readOnlyCheck = nullptr;
+    QCheckBox *m_calculateFolderSizesCheck = nullptr;
     QLineEdit *m_filterEdit = nullptr;
     QComboBox *m_filterModeCombo = nullptr;
 
@@ -108,6 +112,7 @@ private:
     QString m_currentPath;
     bool m_readOnly = false;
     bool m_inArchive = false;
+    bool m_calculateFolderSizes = false;
     QString m_statusText;
     // Selection captured just before a scan resets the view, restored once
     // the scan finishes so external changes don't drop what was selected.
