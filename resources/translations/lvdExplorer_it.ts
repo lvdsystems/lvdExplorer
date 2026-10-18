@@ -240,7 +240,7 @@
 <context>
     <name>CustomActionManager</name>
     <message>
-        <location filename="../../ui/customactions/customactionmanager.cpp" line="126"/>
+        <location filename="../../ui/customactions/customactionmanager.cpp" line="128"/>
         <source>New Text File.txt</source>
         <translation>Nuovo file di testo.txt</translation>
     </message>
@@ -409,12 +409,12 @@
 <context>
     <name>FilePane</name>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="134"/>
+        <location filename="../../ui/pane/filepane.cpp" line="135"/>
         <source>Filter this folder…</source>
         <translation>Filtra questa cartella…</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="139"/>
+        <location filename="../../ui/pane/filepane.cpp" line="140"/>
         <source>Regex</source>
         <translation>Regex</translation>
     </message>
@@ -423,66 +423,66 @@
         <translation type="vanished">Tratta il testo del filtro come un&apos;espressione regolare invece di una semplice sottostringa.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="149"/>
+        <location filename="../../ui/pane/filepane.cpp" line="150"/>
         <source>Back</source>
         <translation>Indietro</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="150"/>
+        <location filename="../../ui/pane/filepane.cpp" line="151"/>
         <source>Forward</source>
         <translation>Avanti</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="151"/>
-        <location filename="../../ui/pane/filepane.cpp" line="180"/>
+        <location filename="../../ui/pane/filepane.cpp" line="152"/>
+        <location filename="../../ui/pane/filepane.cpp" line="181"/>
         <source>Up</source>
         <translation>Su</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="152"/>
+        <location filename="../../ui/pane/filepane.cpp" line="153"/>
         <source>Refresh</source>
         <translation>Aggiorna</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="166"/>
+        <location filename="../../ui/pane/filepane.cpp" line="167"/>
         <source>Pane: Back</source>
         <translation>Pannello: Indietro</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="168"/>
+        <location filename="../../ui/pane/filepane.cpp" line="169"/>
         <source>Pane: Forward</source>
         <translation>Pannello: Avanti</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="170"/>
+        <location filename="../../ui/pane/filepane.cpp" line="171"/>
         <source>Pane: Up</source>
         <translation>Pannello: Su</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="172"/>
+        <location filename="../../ui/pane/filepane.cpp" line="173"/>
         <source>Pane: Refresh</source>
         <translation>Pannello: Aggiorna</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="188"/>
-        <location filename="../../ui/pane/filepane.cpp" line="471"/>
-        <location filename="../../ui/pane/filepane.cpp" line="596"/>
-        <location filename="../../ui/pane/filepane.cpp" line="598"/>
+        <location filename="../../ui/pane/filepane.cpp" line="189"/>
+        <location filename="../../ui/pane/filepane.cpp" line="472"/>
+        <location filename="../../ui/pane/filepane.cpp" line="621"/>
+        <location filename="../../ui/pane/filepane.cpp" line="623"/>
         <source>New Folder</source>
         <translation>Nuova cartella</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="192"/>
+        <location filename="../../ui/pane/filepane.cpp" line="193"/>
         <source>Pane: New Folder</source>
         <translation>Pannello: Nuova cartella</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="201"/>
+        <location filename="../../ui/pane/filepane.cpp" line="202"/>
         <source>Drives</source>
         <translation>Unità</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="203"/>
+        <location filename="../../ui/pane/filepane.cpp" line="204"/>
         <source>Jump to a drive or volume</source>
         <translation>Vai a un&apos;unità o volume</translation>
     </message>
@@ -491,291 +491,308 @@
         <translation type="vanished">%1 (%2)</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="235"/>
+        <location filename="../../ui/pane/filepane.cpp" line="236"/>
         <source>Read-only</source>
         <translation>Sola lettura</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="183"/>
+        <location filename="../../ui/pane/filepane.cpp" line="184"/>
         <source>Pane: Up (Backspace)</source>
         <translation>Pannello: Su (Backspace)</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="138"/>
+        <location filename="../../ui/pane/filepane.cpp" line="139"/>
         <source>Substring</source>
         <translation>Sottostringa</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="140"/>
+        <location filename="../../ui/pane/filepane.cpp" line="141"/>
         <source>Wildcard</source>
         <translation>Caratteri jolly</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="142"/>
+        <location filename="../../ui/pane/filepane.cpp" line="143"/>
         <source>How the filter text is matched: plain substring, regular expression, or &quot;*&quot;/&quot;?&quot; wildcards.</source>
         <translation>Come viene confrontato il testo del filtro: sottostringa semplice, espressione regolare oppure caratteri jolly “*”/“?”.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="214"/>
+        <location filename="../../ui/pane/filepane.cpp" line="215"/>
         <source>Loading…</source>
         <translation>Caricamento…</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="221"/>
+        <location filename="../../ui/pane/filepane.cpp" line="222"/>
         <source>No drives found</source>
         <translation>Nessuna unità trovata</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="237"/>
+        <location filename="../../ui/pane/filepane.cpp" line="238"/>
         <source>Blocks delete, rename, and move operations in this pane (§10). Copying into it is still allowed.</source>
         <translation>Blocca le operazioni di eliminazione, rinomina e spostamento in questo pannello (§10). La copia al suo interno resta consentita.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="241"/>
+        <location filename="../../ui/pane/filepane.cpp" line="242"/>
         <source>Folder sizes</source>
         <translation>Dimensioni cartelle</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="243"/>
+        <location filename="../../ui/pane/filepane.cpp" line="244"/>
         <source>Computes each folder&apos;s total size in the background and makes the Size column sortable for folders too. Off by default since walking every subfolder is real disk I/O a plain listing doesn&apos;t need.</source>
         <translation>Calcola in background la dimensione totale di ogni cartella e rende la colonna Dimensione ordinabile anche per le cartelle. Disattivato per impostazione predefinita, poiché scandire ogni sottocartella comporta un reale accesso al disco che un semplice elenco non richiede.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="268"/>
-        <location filename="../../ui/pane/filepane.cpp" line="327"/>
-        <location filename="../../ui/pane/filepane.cpp" line="642"/>
-        <location filename="../../ui/pane/filepane.cpp" line="809"/>
-        <location filename="../../ui/pane/filepane.cpp" line="840"/>
-        <location filename="../../ui/pane/filepane.cpp" line="859"/>
+        <location filename="../../ui/pane/filepane.cpp" line="269"/>
+        <location filename="../../ui/pane/filepane.cpp" line="328"/>
+        <location filename="../../ui/pane/filepane.cpp" line="667"/>
+        <location filename="../../ui/pane/filepane.cpp" line="676"/>
+        <location filename="../../ui/pane/filepane.cpp" line="700"/>
+        <location filename="../../ui/pane/filepane.cpp" line="873"/>
+        <location filename="../../ui/pane/filepane.cpp" line="904"/>
+        <location filename="../../ui/pane/filepane.cpp" line="923"/>
         <source>lvdExplorer</source>
         <translation>lvdExplorer</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="276"/>
-        <location filename="../../ui/pane/filepane.cpp" line="529"/>
-        <location filename="../../ui/pane/filepane.cpp" line="746"/>
+        <location filename="../../ui/pane/filepane.cpp" line="277"/>
+        <location filename="../../ui/pane/filepane.cpp" line="550"/>
+        <location filename="../../ui/pane/filepane.cpp" line="810"/>
         <source>Delete</source>
         <translation>Elimina</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="278"/>
+        <location filename="../../ui/pane/filepane.cpp" line="279"/>
         <source>Pane: Delete</source>
         <translation>Pannello: Elimina</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="283"/>
-        <location filename="../../ui/pane/filepane.cpp" line="503"/>
+        <location filename="../../ui/pane/filepane.cpp" line="284"/>
+        <location filename="../../ui/pane/filepane.cpp" line="524"/>
         <source>Rename</source>
         <translation>Rinomina</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="285"/>
+        <location filename="../../ui/pane/filepane.cpp" line="286"/>
         <source>Pane: Rename</source>
         <translation>Pannello: Rinomina</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="295"/>
-        <location filename="../../ui/pane/filepane.cpp" line="508"/>
+        <location filename="../../ui/pane/filepane.cpp" line="296"/>
+        <location filename="../../ui/pane/filepane.cpp" line="529"/>
         <source>Cut</source>
         <translation>Taglia</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="297"/>
+        <location filename="../../ui/pane/filepane.cpp" line="298"/>
         <source>Pane: Cut</source>
         <translation>Pannello: Taglia</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="302"/>
-        <location filename="../../ui/pane/filepane.cpp" line="510"/>
+        <location filename="../../ui/pane/filepane.cpp" line="303"/>
+        <location filename="../../ui/pane/filepane.cpp" line="531"/>
         <source>Copy</source>
         <translation>Copia</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="304"/>
+        <location filename="../../ui/pane/filepane.cpp" line="305"/>
         <source>Pane: Copy</source>
         <translation>Pannello: Copia</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="309"/>
-        <location filename="../../ui/pane/filepane.cpp" line="512"/>
+        <location filename="../../ui/pane/filepane.cpp" line="310"/>
+        <location filename="../../ui/pane/filepane.cpp" line="533"/>
         <source>Paste</source>
         <translation>Incolla</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="311"/>
+        <location filename="../../ui/pane/filepane.cpp" line="312"/>
         <source>Pane: Paste</source>
         <translation>Pannello: Incolla</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="327"/>
+        <location filename="../../ui/pane/filepane.cpp" line="328"/>
         <source>“%1” does not exist.</source>
         <translation>“%1” non esiste.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="477"/>
+        <location filename="../../ui/pane/filepane.cpp" line="478"/>
         <source>New</source>
         <translation>Nuovo</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="478"/>
+        <location filename="../../ui/pane/filepane.cpp" line="479"/>
         <source>Folder</source>
         <translation>Cartella</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="483"/>
+        <location filename="../../ui/pane/filepane.cpp" line="484"/>
         <source>Open</source>
         <translation>Apri</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="490"/>
+        <location filename="../../ui/pane/filepane.cpp" line="491"/>
         <source>Open With</source>
         <translation>Apri con</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="500"/>
+        <location filename="../../ui/pane/filepane.cpp" line="510"/>
+        <source>Extract Here</source>
+        <translation>Estrai qui</translation>
+    </message>
+    <message>
+        <location filename="../../ui/pane/filepane.cpp" line="513"/>
+        <source>Extract to &quot;%1&quot;</source>
+        <translation>Estrai in “%1”</translation>
+    </message>
+    <message>
+        <location filename="../../ui/pane/filepane.cpp" line="514"/>
+        <source>Extract to Folders</source>
+        <translation>Estrai in cartelle</translation>
+    </message>
+    <message>
+        <location filename="../../ui/pane/filepane.cpp" line="521"/>
         <source>Add “%1” to Bookmarks</source>
         <translation>Aggiungi “%1” ai segnalibri</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="501"/>
+        <location filename="../../ui/pane/filepane.cpp" line="522"/>
         <source>Add This Folder to Bookmarks</source>
         <translation>Aggiungi questa cartella ai segnalibri</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="505"/>
+        <location filename="../../ui/pane/filepane.cpp" line="526"/>
         <source>Batch Rename...</source>
         <translation>Rinomina multipla...</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="515"/>
+        <location filename="../../ui/pane/filepane.cpp" line="536"/>
         <source>Checksums...</source>
         <translation>Checksum...</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="518"/>
+        <location filename="../../ui/pane/filepane.cpp" line="539"/>
         <source>Open Terminal Here</source>
         <translation>Apri terminale qui</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="523"/>
+        <location filename="../../ui/pane/filepane.cpp" line="544"/>
         <source>More Options (Shell Menu)...</source>
         <translation>Altre opzioni (menu di sistema)...</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="526"/>
+        <location filename="../../ui/pane/filepane.cpp" line="547"/>
         <source>Properties</source>
         <translation>Proprietà</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="591"/>
+        <location filename="../../ui/pane/filepane.cpp" line="616"/>
         <source>Pane is read-only: new folder is blocked.</source>
         <translation>Il pannello è in sola lettura: la creazione di una cartella è bloccata.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="598"/>
+        <location filename="../../ui/pane/filepane.cpp" line="623"/>
         <source>Could not create the new folder.</source>
         <translation>Impossibile creare la nuova cartella.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="609"/>
+        <location filename="../../ui/pane/filepane.cpp" line="634"/>
         <source>Pane is read-only: new file is blocked.</source>
         <translation>Il pannello è in sola lettura: la creazione di un file è bloccata.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="617"/>
+        <location filename="../../ui/pane/filepane.cpp" line="642"/>
         <source>New File</source>
         <translation>Nuovo file</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="617"/>
+        <location filename="../../ui/pane/filepane.cpp" line="642"/>
         <source>Could not create the new file.</source>
         <translation>Impossibile creare il nuovo file.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="642"/>
+        <location filename="../../ui/pane/filepane.cpp" line="667"/>
         <source>Could not launch “%1”.</source>
         <translation>Impossibile avviare “%1”.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="689"/>
-        <location filename="../../ui/pane/filepane.cpp" line="702"/>
+        <location filename="../../ui/pane/filepane.cpp" line="753"/>
+        <location filename="../../ui/pane/filepane.cpp" line="766"/>
         <source>Pane is read-only: rename is blocked.</source>
         <translation>Il pannello è in sola lettura: la rinomina è bloccata.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="734"/>
+        <location filename="../../ui/pane/filepane.cpp" line="798"/>
         <source>Pane is read-only: delete is blocked.</source>
         <translation>Il pannello è in sola lettura: l&apos;eliminazione è bloccata.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="743"/>
+        <location filename="../../ui/pane/filepane.cpp" line="807"/>
         <source>Move “%1” to the Trash?</source>
         <translation>Spostare “%1” nel cestino?</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="744"/>
+        <location filename="../../ui/pane/filepane.cpp" line="808"/>
         <source>Move %1 items to the Trash?</source>
         <translation>Spostare %1 elementi nel cestino?</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="765"/>
+        <location filename="../../ui/pane/filepane.cpp" line="829"/>
         <source>Deleting</source>
         <translation>Eliminazione in corso</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="781"/>
+        <location filename="../../ui/pane/filepane.cpp" line="845"/>
         <source>Pane is read-only: cut is blocked.</source>
         <translation>Il pannello è in sola lettura: il taglio è bloccato.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="810"/>
+        <location filename="../../ui/pane/filepane.cpp" line="874"/>
         <source>Could not extract the file from the archive.</source>
         <translation>Impossibile estrarre il file dall&apos;archivio.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="871"/>
+        <location filename="../../ui/pane/filepane.cpp" line="935"/>
         <source>Pane is read-only: paste is blocked.</source>
         <translation>Il pannello è in sola lettura: l&apos;incolla è bloccato.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="930"/>
+        <location filename="../../ui/pane/filepane.cpp" line="994"/>
         <source>%1 item(s)</source>
         <translation>%1 elemento/i</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="941"/>
+        <location filename="../../ui/pane/filepane.cpp" line="1005"/>
         <source> — %1 selected</source>
         <translation> — %1 selezionati</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="943"/>
+        <location filename="../../ui/pane/filepane.cpp" line="1007"/>
         <source> (%1)</source>
         <translation> (%1)</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="946"/>
+        <location filename="../../ui/pane/filepane.cpp" line="1010"/>
         <source> — read-only</source>
         <translation> — sola lettura</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="948"/>
+        <location filename="../../ui/pane/filepane.cpp" line="1012"/>
         <source> — filtered</source>
         <translation> — filtrato</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="1009"/>
+        <location filename="../../ui/pane/filepane.cpp" line="1073"/>
         <source>Pane is read-only: drop is blocked.</source>
         <translation>Il pannello è in sola lettura: il rilascio è bloccato.</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="893"/>
-        <location filename="../../ui/pane/filepane.cpp" line="1036"/>
+        <location filename="../../ui/pane/filepane.cpp" line="957"/>
+        <location filename="../../ui/pane/filepane.cpp" line="1100"/>
         <source>Moving</source>
         <translation>Spostamento in corso</translation>
     </message>
     <message>
-        <location filename="../../ui/pane/filepane.cpp" line="893"/>
-        <location filename="../../ui/pane/filepane.cpp" line="1036"/>
+        <location filename="../../ui/pane/filepane.cpp" line="957"/>
+        <location filename="../../ui/pane/filepane.cpp" line="1100"/>
         <source>Copying</source>
         <translation>Copia in corso</translation>
     </message>
@@ -1049,160 +1066,170 @@
     <name>MainWindow</name>
     <message>
         <location filename="../../app/src/mainwindow.cpp" line="32"/>
-        <location filename="../../app/src/mainwindow.cpp" line="301"/>
-        <location filename="../../app/src/mainwindow.cpp" line="308"/>
+        <location filename="../../app/src/mainwindow.cpp" line="312"/>
+        <location filename="../../app/src/mainwindow.cpp" line="319"/>
         <source>lvdExplorer</source>
         <translation>lvdExplorer</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="89"/>
-        <location filename="../../app/src/mainwindow.cpp" line="162"/>
+        <location filename="../../app/src/mainwindow.cpp" line="71"/>
+        <source>Save Session</source>
+        <translation>Salva sessione</translation>
+    </message>
+    <message>
+        <location filename="../../app/src/mainwindow.cpp" line="72"/>
+        <source>Save the current window layout and open tabs, so they&apos;re restored the next time lvdExplorer starts?</source>
+        <translation>Salvare la disposizione attuale della finestra e le schede aperte, in modo che vengano ripristinate al prossimo avvio di lvdExplorer?</translation>
+    </message>
+    <message>
+        <location filename="../../app/src/mainwindow.cpp" line="100"/>
+        <location filename="../../app/src/mainwindow.cpp" line="173"/>
         <source>Find Files</source>
         <translation>Trova file</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="110"/>
-        <location filename="../../app/src/mainwindow.cpp" line="172"/>
+        <location filename="../../app/src/mainwindow.cpp" line="121"/>
+        <location filename="../../app/src/mainwindow.cpp" line="183"/>
         <source>Bookmarks</source>
         <translation>Segnalibri</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="119"/>
+        <location filename="../../app/src/mainwindow.cpp" line="130"/>
         <source>Ready</source>
         <translation>Pronto</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="160"/>
+        <location filename="../../app/src/mainwindow.cpp" line="171"/>
         <source>&amp;Find Files...</source>
         <translation>&amp;Trova file...</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="170"/>
+        <location filename="../../app/src/mainwindow.cpp" line="181"/>
         <source>&amp;Bookmarks</source>
         <translation>&amp;Segnalibri</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="175"/>
+        <location filename="../../app/src/mainwindow.cpp" line="186"/>
         <source>&amp;Compare Folders...</source>
         <translation>&amp;Confronta cartelle...</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="178"/>
+        <location filename="../../app/src/mainwindow.cpp" line="189"/>
         <source>&amp;Sessions...</source>
         <translation>&amp;Sessioni...</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="179"/>
+        <location filename="../../app/src/mainwindow.cpp" line="190"/>
         <source>Sessions</source>
         <translation>Sessioni</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="183"/>
+        <location filename="../../app/src/mainwindow.cpp" line="194"/>
         <source>&amp;Keyboard Shortcuts...</source>
         <translation>&amp;Scorciatoie da tastiera...</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="190"/>
+        <location filename="../../app/src/mainwindow.cpp" line="201"/>
         <source>&amp;Custom Actions...</source>
         <translation>&amp;Azioni personalizzate...</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="202"/>
+        <location filename="../../app/src/mainwindow.cpp" line="213"/>
         <source>&amp;2 Panes (Commander)</source>
         <translation>&amp;2 pannelli (Commander)</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="206"/>
+        <location filename="../../app/src/mainwindow.cpp" line="217"/>
         <source>View: 1 Pane</source>
         <translation>Vista: 1 pannello</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="209"/>
+        <location filename="../../app/src/mainwindow.cpp" line="220"/>
         <source>View: 2 Panes (Commander)</source>
         <translation>Vista: 2 pannelli (Commander)</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="211"/>
+        <location filename="../../app/src/mainwindow.cpp" line="222"/>
         <source>View: 2 Panes (Stacked)</source>
         <translation>Vista: 2 pannelli (impilati)</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="212"/>
+        <location filename="../../app/src/mainwindow.cpp" line="223"/>
         <source>View: 4 Panes</source>
         <translation>Vista: 4 pannelli</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="224"/>
+        <location filename="../../app/src/mainwindow.cpp" line="235"/>
         <source>Main</source>
         <translation>Principale</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="239"/>
+        <location filename="../../app/src/mainwindow.cpp" line="250"/>
         <source>&amp;Tools</source>
         <translation>S&amp;trumenti</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="246"/>
+        <location filename="../../app/src/mainwindow.cpp" line="257"/>
         <source>&amp;View</source>
         <translation>&amp;Vista</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="201"/>
+        <location filename="../../app/src/mainwindow.cpp" line="212"/>
         <source>&amp;1 Pane</source>
         <translation>&amp;1 pannello</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="203"/>
+        <location filename="../../app/src/mainwindow.cpp" line="214"/>
         <source>2 Panes (&amp;Stacked)</source>
         <translation>2 pannelli (&amp;impilati)</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="204"/>
+        <location filename="../../app/src/mainwindow.cpp" line="215"/>
         <source>&amp;4 Panes</source>
         <translation>&amp;4 pannelli</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="254"/>
+        <location filename="../../app/src/mainwindow.cpp" line="265"/>
         <source>&amp;Theme</source>
         <translation>&amp;Tema</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="258"/>
+        <location filename="../../app/src/mainwindow.cpp" line="269"/>
         <source>&amp;System Default</source>
         <translation>Predefinito di &amp;sistema</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="259"/>
+        <location filename="../../app/src/mainwindow.cpp" line="270"/>
         <source>&amp;Light</source>
         <translation>&amp;Chiaro</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="260"/>
+        <location filename="../../app/src/mainwindow.cpp" line="271"/>
         <source>&amp;Dark</source>
         <translation>Sc&amp;uro</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="283"/>
+        <location filename="../../app/src/mainwindow.cpp" line="294"/>
         <source>&amp;Session</source>
         <translation>&amp;Sessione</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="286"/>
+        <location filename="../../app/src/mainwindow.cpp" line="297"/>
         <source>&amp;Help</source>
         <translation>&amp;Aiuto</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="287"/>
+        <location filename="../../app/src/mainwindow.cpp" line="298"/>
         <source>&amp;About lvdExplorer...</source>
         <translation>&amp;Informazioni su lvdExplorer...</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="301"/>
+        <location filename="../../app/src/mainwindow.cpp" line="312"/>
         <source>Could not save session “%1”.</source>
         <translation>Impossibile salvare la sessione “%1”.</translation>
     </message>
     <message>
-        <location filename="../../app/src/mainwindow.cpp" line="308"/>
+        <location filename="../../app/src/mainwindow.cpp" line="319"/>
         <source>Could not load session “%1”.</source>
         <translation>Impossibile caricare la sessione “%1”.</translation>
     </message>

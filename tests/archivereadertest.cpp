@@ -1,3 +1,4 @@
+#include "core/archive/archiveextractalltask.h"
 #include "core/archive/archivereader.h"
 #include "core/fsmodel/archivescantask.h"
 
@@ -22,6 +23,8 @@ private slots:
     void rejectsMissingFile();
     void splitsVirtualPathsInsideArchives();
     void scanListsOnlyDirectChildrenOfEachFolder();
+    void extractAllTaskExtractsEveryTopLevelEntry();
+    void extractAllTaskReportsErrorForMissingArchive();
 };
 
 namespace {
@@ -197,6 +200,58 @@ void ArchiveReaderTest::scanListsOnlyDirectChildrenOfEachFolder()
 
     QCOMPARE(collect(QString()), (QStringList{QStringLiteral("docs/"), QStringLiteral("top.txt")}));
     QCOMPARE(collect(QStringLiteral("docs")), (QStringList{QStringLiteral("deep/"), QStringLiteral("readme.md")}));
+}
+
+void ArchiveReaderTest::extractAllTaskExtractsEveryTopLevelEntry()
+{
+    QTemporaryDir archiveDir;
+    QTemporaryDir outDir;
+    QVERIFY(archiveDir.isValid() && outDir.isValid());
+    const QString zipPath = QDir(archiveDir.path()).filePath(QStringLiteral("sample.zip"));
+    QVERIFY(writeZip(zipPath));
+
+    QStringList resultPaths;
+    QString error;
+    ArchiveExtractAllTask task(zipPath, outDir.path());
+    QObject::connect(&task, &ArchiveExtractAllTask::finished,
+                      [&](const QStringList &paths, const QString &err) {
+                          resultPaths = paths;
+                          error = err;
+                      });
+    task.run();
+
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    // "top.txt" and "docs" are the only top-level entries -- "docs/readme.md"
+    // and "docs/deep/notes.txt" come along as part of "docs", not as
+    // separate top-level results.
+    resultPaths.sort();
+    QStringList expected = {QDir(outDir.path()).filePath(QStringLiteral("docs")),
+                             QDir(outDir.path()).filePath(QStringLiteral("top.txt"))};
+    expected.sort();
+    QCOMPARE(resultPaths, expected);
+
+    QCOMPARE(readFile(QDir(outDir.path()).filePath(QStringLiteral("top.txt"))), QStringLiteral("top level"));
+    QCOMPARE(readFile(QDir(outDir.path()).filePath(QStringLiteral("docs/deep/notes.txt"))),
+             QStringLiteral("deep notes"));
+}
+
+void ArchiveReaderTest::extractAllTaskReportsErrorForMissingArchive()
+{
+    QTemporaryDir dir;
+    QVERIFY(dir.isValid());
+
+    QStringList resultPaths;
+    QString error;
+    ArchiveExtractAllTask task(QDir(dir.path()).filePath(QStringLiteral("missing.zip")), dir.path());
+    QObject::connect(&task, &ArchiveExtractAllTask::finished,
+                      [&](const QStringList &paths, const QString &err) {
+                          resultPaths = paths;
+                          error = err;
+                      });
+    task.run();
+
+    QVERIFY(!error.isEmpty());
+    QVERIFY(resultPaths.isEmpty());
 }
 
 QTEST_GUILESS_MAIN(ArchiveReaderTest)

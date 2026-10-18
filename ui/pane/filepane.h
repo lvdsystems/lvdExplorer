@@ -90,6 +90,8 @@ private:
     void copyArchiveEntries(const QStringList &archiveEntryPaths);
     void selectAndOfferRenameAfterScan(const QString &path);
     void launchOpenWith(const CustomAction &action, const QString &filePath);
+    void extractArchivesHere(const QStringList &archivePaths);
+    void extractArchivesToSubfolder(const QStringList &archivePaths);
 
     FileSystemModel *m_model = nullptr;
     FileTreeView *m_view = nullptr;

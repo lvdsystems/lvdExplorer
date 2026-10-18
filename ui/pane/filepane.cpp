@@ -1,5 +1,6 @@
 #include "ui/pane/filepane.h"
 
+#include "core/archive/archiveextractalltask.h"
 #include "core/archive/archiveextracttask.h"
 #include "core/archive/archivereader.h"
 #include "core/fsmodel/drivelisttask.h"
@@ -493,6 +494,26 @@ void FilePane::showContextMenu(const QPoint &pos)
         }
     }
 
+    // Only when every selected item is an archive file sitting in a real
+    // folder -- not inside one already (ArchiveReader needs an actual
+    // openable file on disk, which a virtual in-archive path isn't).
+    bool allSelectedAreArchives = !indexes.isEmpty() && !m_inArchive;
+    for (const QModelIndex &idx : indexes) {
+        if (isDirIndex(idx) || !ArchiveReader::isArchiveFile(m_model->filePath(idx))) {
+            allSelectedAreArchives = false;
+            break;
+        }
+    }
+    QAction *extractHereAction = nullptr;
+    QAction *extractToFolderAction = nullptr;
+    if (allSelectedAreArchives) {
+        extractHereAction = menu.addAction(tr("Extract Here"));
+        extractToFolderAction = menu.addAction(
+            indexes.size() == 1
+                ? tr("Extract to \"%1\"").arg(QFileInfo(m_model->filePath(indexes.first())).completeBaseName())
+                : tr("Extract to Folders"));
+    }
+
     const bool singleFolderSelected = indexes.size() == 1 && isDirIndex(indexes.first());
     QAction *bookmarkAction = menu.addAction(
         IconFactory::bookmark(),
@@ -539,6 +560,10 @@ void FilePane::showContextMenu(const QPoint &pos)
         launchOpenWith(customOpenWithActions.value(chosen), m_model->filePath(indexes.first()));
     else if (chosen == openAction && !indexes.isEmpty())
         onActivated(indexes.first());
+    else if (chosen && chosen == extractHereAction)
+        extractArchivesHere(selectedPaths());
+    else if (chosen && chosen == extractToFolderAction)
+        extractArchivesToSubfolder(selectedPaths());
     else if (chosen == bookmarkAction)
         BookmarkManager::instance().add(singleFolderSelected ? pathForIndex(indexes.first()) : m_currentPath);
     else if (chosen == renameAction)
@@ -640,6 +665,45 @@ void FilePane::launchOpenWith(const CustomAction &action, const QString &filePat
 
     if (!QProcess::startDetached(action.programPath, args))
         QMessageBox::warning(this, tr("lvdExplorer"), tr("Could not launch “%1”.").arg(action.programPath));
+}
+
+void FilePane::extractArchivesHere(const QStringList &archivePaths)
+{
+    for (const QString &archivePath : archivePaths) {
+        auto *task = new ArchiveExtractAllTask(archivePath, m_currentPath);
+        connect(task, &ArchiveExtractAllTask::finished, this, [this](const QStringList &, const QString &error) {
+            if (!error.isEmpty()) {
+                QMessageBox::warning(this, tr("lvdExplorer"), error);
+                return;
+            }
+            refresh();
+        });
+        QThreadPool::globalInstance()->start(task);
+    }
+}
+
+void FilePane::extractArchivesToSubfolder(const QStringList &archivePaths)
+{
+    const QDir dir(m_currentPath);
+    for (const QString &archivePath : archivePaths) {
+        const QString baseName = QFileInfo(archivePath).completeBaseName();
+        const QString destDir = dir.filePath(uniqueDestinationName(dir, baseName));
+        // Reserves the name synchronously: extraction itself happens on a
+        // background task, so without this, two same-named archives
+        // selected together would both compute the same "not taken yet"
+        // folder name and race to extract into it.
+        QDir().mkpath(destDir);
+
+        auto *task = new ArchiveExtractAllTask(archivePath, destDir);
+        connect(task, &ArchiveExtractAllTask::finished, this, [this](const QStringList &, const QString &error) {
+            if (!error.isEmpty()) {
+                QMessageBox::warning(this, tr("lvdExplorer"), error);
+                return;
+            }
+            refresh();
+        });
+        QThreadPool::globalInstance()->start(task);
+    }
 }
 
 void FilePane::onEditorClosed()

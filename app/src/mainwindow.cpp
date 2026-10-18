@@ -67,7 +67,18 @@ MainWindow::MainWindow(QWidget *parent)
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    SessionManager::save(SessionManager::kAutosaveSessionName, captureSession());
+    const QMessageBox::StandardButton choice = QMessageBox::question(
+        this, tr("Save Session"),
+        tr("Save the current window layout and open tabs, so they're restored the next time lvdExplorer starts?"),
+        QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::Yes);
+
+    if (choice == QMessageBox::Cancel) {
+        event->ignore();
+        return;
+    }
+    if (choice == QMessageBox::Yes)
+        SessionManager::save(SessionManager::kAutosaveSessionName, captureSession());
+
     QMainWindow::closeEvent(event);
 }
 
