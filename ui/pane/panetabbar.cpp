@@ -65,6 +65,19 @@ void PaneTabBar::mouseMoveEvent(QMouseEvent *event)
     drag->exec(Qt::MoveAction);
 }
 
+void PaneTabBar::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    // Only on empty space, not on an existing tab -- matches the browser
+    // convention (Chrome/Firefox) this is modeled on, and leaves
+    // double-clicking an actual tab alone rather than overloading it with
+    // a second meaning.
+    if (event->button() == Qt::LeftButton && tabAt(event->position().toPoint()) < 0) {
+        m_owner->addNewTab();
+        return;
+    }
+    QTabBar::mouseDoubleClickEvent(event);
+}
+
 void PaneTabBar::dragEnterEvent(QDragEnterEvent *event)
 {
     if (event->mimeData()->hasFormat(QString::fromLatin1(kTabMimeType)))

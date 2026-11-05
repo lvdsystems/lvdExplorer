@@ -25,8 +25,13 @@ public:
     PaneSessionState captureState() const;
     void applyState(const PaneSessionState &state);
 
-private slots:
+public slots:
+    // Also reachable from PaneTabBar: double-clicking empty space on the
+    // tab bar (not on an existing tab) opens a new tab the same way the
+    // corner "+" button does.
     void addNewTab();
+
+private slots:
     void closeTab(int index);
 
 private:

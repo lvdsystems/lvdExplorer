@@ -1,5 +1,7 @@
+#include "core/archive/archivecreatetask.h"
 #include "core/archive/archiveextractalltask.h"
 #include "core/archive/archivereader.h"
+#include "core/archive/archivewriter.h"
 #include "core/fsmodel/archivescantask.h"
 
 #include <archive.h>
@@ -25,6 +27,8 @@ private slots:
     void scanListsOnlyDirectChildrenOfEachFolder();
     void extractAllTaskExtractsEveryTopLevelEntry();
     void extractAllTaskReportsErrorForMissingArchive();
+    void createsZipFromFileAndFolder();
+    void createZipTaskReportsErrorForMissingSource();
 };
 
 namespace {
@@ -252,6 +256,82 @@ void ArchiveReaderTest::extractAllTaskReportsErrorForMissingArchive()
 
     QVERIFY(!error.isEmpty());
     QVERIFY(resultPaths.isEmpty());
+}
+
+void ArchiveReaderTest::createsZipFromFileAndFolder()
+{
+    QTemporaryDir sourceDir;
+    QTemporaryDir outDir;
+    QVERIFY(sourceDir.isValid() && outDir.isValid());
+
+    const QString topFile = QDir(sourceDir.path()).filePath(QStringLiteral("top.txt"));
+    QFile topFileHandle(topFile);
+    QVERIFY(topFileHandle.open(QIODevice::WriteOnly));
+    topFileHandle.write("top level");
+    topFileHandle.close();
+
+    const QString docsDir = QDir(sourceDir.path()).filePath(QStringLiteral("docs"));
+    QDir().mkpath(docsDir);
+    const QString readme = QDir(docsDir).filePath(QStringLiteral("readme.md"));
+    QFile readmeFile(readme);
+    QVERIFY(readmeFile.open(QIODevice::WriteOnly));
+    readmeFile.write("readme body");
+    readmeFile.close();
+
+    const QString zipPath = QDir(outDir.path()).filePath(QStringLiteral("made.zip"));
+    QString error;
+    QVERIFY2(ArchiveWriter::createZip(zipPath, {topFile, docsDir}, &error), qPrintable(error));
+    QVERIFY(QFile::exists(zipPath));
+
+    // Round-trip through ArchiveReader to confirm the zip is well-formed
+    // and has exactly the entries expected -- "top.txt" as a top-level
+    // file, "docs" as a top-level folder with "readme.md" nested under it.
+    QVector<ArchiveEntry> entries;
+    QVERIFY2(ArchiveReader::list(zipPath, &entries, &error), qPrintable(error));
+
+    QStringList files;
+    QStringList folders;
+    for (const ArchiveEntry &entry : std::as_const(entries)) {
+        if (entry.isDir)
+            folders << entry.path;
+        else
+            files << entry.path;
+    }
+    QVERIFY(files.contains(QStringLiteral("top.txt")));
+    QVERIFY(files.contains(QStringLiteral("docs/readme.md")));
+    QVERIFY(folders.contains(QStringLiteral("docs")));
+
+    QStringList extracted;
+    QVERIFY2(ArchiveReader::extract(zipPath, {QStringLiteral("top.txt"), QStringLiteral("docs")}, outDir.path(),
+                                     &extracted, &error),
+             qPrintable(error));
+    QCOMPARE(readFile(QDir(outDir.path()).filePath(QStringLiteral("top.txt"))), QStringLiteral("top level"));
+    QCOMPARE(readFile(QDir(outDir.path()).filePath(QStringLiteral("docs/readme.md"))),
+             QStringLiteral("readme body"));
+}
+
+void ArchiveReaderTest::createZipTaskReportsErrorForMissingSource()
+{
+    QTemporaryDir sourceDir;
+    QTemporaryDir outDir;
+    QVERIFY(sourceDir.isValid() && outDir.isValid());
+
+    const QString missingSource = QDir(sourceDir.path()).filePath(QStringLiteral("nope.txt")); // never created
+    const QString zipPath = QDir(outDir.path()).filePath(QStringLiteral("made.zip"));
+
+    QString resultZipPath = QStringLiteral("unset");
+    QString error;
+    ArchiveCreateTask task(zipPath, {missingSource});
+    QObject::connect(&task, &ArchiveCreateTask::finished, [&](const QString &path, const QString &err) {
+        resultZipPath = path;
+        error = err;
+    });
+    task.run();
+
+    QVERIFY(!error.isEmpty());
+    QVERIFY(resultZipPath.isEmpty());
+    // A half-written zip must not be left behind on failure.
+    QVERIFY(!QFile::exists(zipPath));
 }
 
 QTEST_GUILESS_MAIN(ArchiveReaderTest)

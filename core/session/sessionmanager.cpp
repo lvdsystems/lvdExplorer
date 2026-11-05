@@ -1,5 +1,7 @@
 #include "core/session/sessionmanager.h"
 
+#include "core/session/portablesettings.h"
+
 #include <QCoreApplication>
 #include <QDir>
 #include <QFile>
@@ -7,11 +9,17 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QSaveFile>
+#include <QSettings>
 #include <QStandardPaths>
 
-const QString SessionManager::kAutosaveSessionName = QStringLiteral("last");
-
 namespace {
+
+constexpr int kMaxRecentSessions = 10;
+
+QString settingsGroup()
+{
+    return QStringLiteral("sessions");
+}
 
 QJsonObject tabToJson(const TabSessionState &tab)
 {
@@ -150,16 +158,61 @@ bool SessionManager::exists(const QString &sessionName)
 
 bool SessionManager::remove(const QString &sessionName)
 {
-    return QFile::remove(sessionFilePath(sessionName));
+    if (!QFile::remove(sessionFilePath(sessionName)))
+        return false;
+
+    QStringList recents = recentSessionNames();
+    if (recents.removeAll(sessionName) > 0) {
+        QSettings settings = portableAwareSettings();
+        settings.beginGroup(settingsGroup());
+        settings.setValue(QStringLiteral("recent"), recents);
+        settings.endGroup();
+    }
+    if (lastSessionName() == sessionName)
+        setLastSessionName(QString());
+
+    return true;
 }
 
 QStringList SessionManager::listNamedSessions()
 {
     QDir dir(sessionsDirectory());
     QStringList names;
-    for (const QFileInfo &info : dir.entryInfoList({QStringLiteral("*.json")}, QDir::Files, QDir::Name)) {
-        if (info.completeBaseName() != kAutosaveSessionName)
-            names.append(info.completeBaseName());
-    }
+    for (const QFileInfo &info : dir.entryInfoList({QStringLiteral("*.json")}, QDir::Files, QDir::Name))
+        names.append(info.completeBaseName());
     return names;
+}
+
+QStringList SessionManager::recentSessionNames()
+{
+    QSettings settings = portableAwareSettings();
+    settings.beginGroup(settingsGroup());
+    return settings.value(QStringLiteral("recent")).toStringList();
+}
+
+void SessionManager::noteSessionUsed(const QString &sessionName)
+{
+    QStringList recents = recentSessionNames();
+    recents.removeAll(sessionName);
+    recents.prepend(sessionName);
+    while (recents.size() > kMaxRecentSessions)
+        recents.removeLast();
+
+    QSettings settings = portableAwareSettings();
+    settings.beginGroup(settingsGroup());
+    settings.setValue(QStringLiteral("recent"), recents);
+}
+
+QString SessionManager::lastSessionName()
+{
+    QSettings settings = portableAwareSettings();
+    settings.beginGroup(settingsGroup());
+    return settings.value(QStringLiteral("lastSessionName")).toString();
+}
+
+void SessionManager::setLastSessionName(const QString &sessionName)
+{
+    QSettings settings = portableAwareSettings();
+    settings.beginGroup(settingsGroup());
+    settings.setValue(QStringLiteral("lastSessionName"), sessionName);
 }

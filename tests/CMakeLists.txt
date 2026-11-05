@@ -49,6 +49,10 @@ qt_add_executable(portablesettingstest portablesettingstest.cpp)
 target_link_libraries(portablesettingstest PRIVATE lvdCore Qt6::Test)
 add_test(NAME PortableSettingsTest COMMAND portablesettingstest)
 
+qt_add_executable(sessionmanagertest sessionmanagertest.cpp)
+target_link_libraries(sessionmanagertest PRIVATE lvdCore Qt6::Test)
+add_test(NAME SessionManagerTest COMMAND sessionmanagertest)
+
 # Deliberately not add_test()'d -- see perftest.cpp's doc comment. It's a
 # QBENCHMARK-based timing suite, not a pass/fail check, and each run takes
 # far longer than the rest of the suite combined; run it directly instead.

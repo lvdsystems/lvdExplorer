@@ -39,6 +39,10 @@ add_library(lvdCore STATIC
     archive/archiveextracttask.cpp
     archive/archiveextractalltask.h
     archive/archiveextractalltask.cpp
+    archive/archivewriter.h
+    archive/archivewriter.cpp
+    archive/archivecreatetask.h
+    archive/archivecreatetask.cpp
     fsmodel/archivescantask.h
     fsmodel/archivescantask.cpp
 )

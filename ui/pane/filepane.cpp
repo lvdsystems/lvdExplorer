@@ -1,5 +1,6 @@
 #include "ui/pane/filepane.h"
 
+#include "core/archive/archivecreatetask.h"
 #include "core/archive/archiveextractalltask.h"
 #include "core/archive/archiveextracttask.h"
 #include "core/archive/archivereader.h"
@@ -31,6 +32,7 @@
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QInputDialog>
 #include <QItemSelectionModel>
 #include <QLineEdit>
 #include <QLocale>
@@ -514,6 +516,10 @@ void FilePane::showContextMenu(const QPoint &pos)
                 : tr("Extract to Folders"));
     }
 
+    QAction *createZipAction = nullptr;
+    if (!indexes.isEmpty() && !m_inArchive)
+        createZipAction = menu.addAction(tr("Create Zip..."));
+
     const bool singleFolderSelected = indexes.size() == 1 && isDirIndex(indexes.first());
     QAction *bookmarkAction = menu.addAction(
         IconFactory::bookmark(),
@@ -564,6 +570,8 @@ void FilePane::showContextMenu(const QPoint &pos)
         extractArchivesHere(selectedPaths());
     else if (chosen && chosen == extractToFolderAction)
         extractArchivesToSubfolder(selectedPaths());
+    else if (chosen && chosen == createZipAction)
+        createZipArchive(selectedPaths());
     else if (chosen == bookmarkAction)
         BookmarkManager::instance().add(singleFolderSelected ? pathForIndex(indexes.first()) : m_currentPath);
     else if (chosen == renameAction)
@@ -704,6 +712,66 @@ void FilePane::extractArchivesToSubfolder(const QStringList &archivePaths)
         });
         QThreadPool::globalInstance()->start(task);
     }
+}
+
+void FilePane::createZipArchive(const QStringList &sourcePaths)
+{
+    if (sourcePaths.isEmpty())
+        return;
+    if (m_inArchive) {
+        showReadOnlyNotice(tr("Pane is read-only: creating a zip is blocked."));
+        return;
+    }
+
+    // Single item selected: propose its own name. Several items selected:
+    // there's no one source name to propose, so fall back to the folder
+    // they're all sitting in (or a generic name at a drive root, where
+    // that folder has no name of its own).
+    QString proposedBaseName;
+    if (sourcePaths.size() == 1) {
+        proposedBaseName = QFileInfo(sourcePaths.first()).fileName();
+    } else {
+        proposedBaseName = QFileInfo(m_currentPath).fileName();
+        if (proposedBaseName.isEmpty())
+            proposedBaseName = tr("Archive");
+    }
+
+    const QDir dir(m_currentPath);
+    QString zipPath;
+    while (true) {
+        bool ok = false;
+        QString name = QInputDialog::getText(this, tr("Create Zip"), tr("Zip file name:"), QLineEdit::Normal,
+                                              proposedBaseName + QStringLiteral(".zip"), &ok);
+        if (!ok)
+            return;
+        name = name.trimmed();
+        if (name.isEmpty())
+            return;
+        if (!name.endsWith(QStringLiteral(".zip"), Qt::CaseInsensitive))
+            name += QStringLiteral(".zip");
+
+        zipPath = dir.filePath(name);
+        if (QFileInfo::exists(zipPath)) {
+            const QMessageBox::StandardButton answer = QMessageBox::question(
+                this, tr("Create Zip"), tr("“%1” already exists. Overwrite it?").arg(name),
+                QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+            if (answer == QMessageBox::Cancel)
+                return;
+            if (answer == QMessageBox::No)
+                continue; // back to the name prompt, proposed name unchanged
+        }
+        break;
+    }
+
+    auto *task = new ArchiveCreateTask(zipPath, sourcePaths);
+    connect(task, &ArchiveCreateTask::finished, this, [this](const QString &, const QString &error) {
+        if (!error.isEmpty()) {
+            QMessageBox::warning(this, tr("lvdExplorer"), error);
+            return;
+        }
+        refresh();
+    });
+    QThreadPool::globalInstance()->start(task);
 }
 
 void FilePane::onEditorClosed()

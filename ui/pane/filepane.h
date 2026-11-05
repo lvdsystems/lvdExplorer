@@ -92,6 +92,7 @@ private:
     void launchOpenWith(const CustomAction &action, const QString &filePath);
     void extractArchivesHere(const QStringList &archivePaths);
     void extractArchivesToSubfolder(const QStringList &archivePaths);
+    void createZipArchive(const QStringList &sourcePaths);
 
     FileSystemModel *m_model = nullptr;
     FileTreeView *m_view = nullptr;

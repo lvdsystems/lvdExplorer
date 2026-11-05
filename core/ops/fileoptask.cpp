@@ -38,6 +38,61 @@ void removeExistingFile(const QString &path)
     QFile::remove(path);
 }
 
+// A path, next to `path`, that nothing currently occupies -- scratch space
+// for building a replacement before swapping it into `path` (see
+// replaceWithBackup() below).
+QString temporarySiblingPath(const QString &path)
+{
+    QString candidate = path + QStringLiteral(".lvdexplorer-tmp");
+    int n = 0;
+    while (QFileInfo::exists(candidate))
+        candidate = path + QStringLiteral(".lvdexplorer-tmp%1").arg(++n);
+    return candidate;
+}
+
+// Best-effort removal of scratch output left behind by a failed/cancelled
+// replace -- never the caller's actual source or destination.
+void removeTempDebris(const QString &path)
+{
+    const QFileInfo info(path);
+    if (!info.exists())
+        return;
+    if (info.isDir())
+        QDir(path).removeRecursively();
+    else
+        removeExistingFile(path);
+}
+
+// Swaps `newContentPath` into `destPath`, which may already exist (as a
+// file or a directory). If it does, its current content is renamed aside
+// and only actually removed once `newContentPath` has landed at `destPath`
+// -- so a failure partway through this function restores the original
+// instead of leaving `destPath` missing or empty. This matters because
+// QDir::rename() (unlike POSIX rename(2)) always refuses to replace an
+// existing target on every platform, which is exactly why callers can't
+// just rename straight over `destPath` and call it done.
+bool replaceWithBackup(const QString &destPath, const QString &newContentPath)
+{
+    QDir dir;
+    if (!QFileInfo::exists(destPath))
+        return dir.rename(newContentPath, destPath);
+
+    const QString backupPath = temporarySiblingPath(destPath);
+    if (!dir.rename(destPath, backupPath))
+        return false; // couldn't get the original out of the way; nothing touched yet
+
+    if (dir.rename(newContentPath, destPath)) {
+        removeTempDebris(backupPath);
+        return true;
+    }
+
+    // Same-volume rename of something we just created failing is not
+    // expected, but if it somehow does, restore the original rather than
+    // leaving destPath empty.
+    dir.rename(backupPath, destPath);
+    return false;
+}
+
 } // namespace
 
 FileOpTask::FileOpTask(FileOpRequest request, QSharedPointer<QAtomicInt> cancelled)
@@ -55,9 +110,20 @@ bool FileOpTask::copyRecursively(const QString &sourcePath, const QString &destP
 
     const QFileInfo sourceInfo(sourcePath);
     if (!sourceInfo.isDir()) {
-        if (overwrite && QFileInfo::exists(destPath))
-            removeExistingFile(destPath);
-        return QFile::copy(sourcePath, destPath);
+        if (!overwrite || !QFileInfo::exists(destPath))
+            return QFile::copy(sourcePath, destPath);
+
+        // Destination exists and is being overwritten: copy to a scratch
+        // path first and only replace the existing file once that copy is
+        // confirmed complete, rather than deleting it up front and hoping
+        // the copy that's supposed to replace it actually succeeds.
+        const QString tempDest = temporarySiblingPath(destPath);
+        if (!QFile::copy(sourcePath, tempDest))
+            return false;
+        if (replaceWithBackup(destPath, tempDest))
+            return true;
+        removeTempDebris(tempDest);
+        return false;
     }
 
     QDir destDirMaker;
@@ -84,28 +150,55 @@ bool FileOpTask::copyRecursively(const QString &sourcePath, const QString &destP
 
 bool FileOpTask::moveOne(const QString &sourcePath, const QString &destPath, int done, int total, bool overwrite)
 {
-    if (overwrite && QFileInfo::exists(destPath)) {
-        // Clears the way for rename() (or the copy+delete fallback below)
-        // to succeed -- unlike POSIX rename(2), QDir::rename() (MoveFileW
-        // under the hood on Windows) refuses to replace an existing
-        // destination.
-        const QFileInfo destInfo(destPath);
-        if (destInfo.isDir())
-            QDir(destPath).removeRecursively();
-        else
-            removeExistingFile(destPath);
+    QDir dir;
+
+    if (!overwrite || !QFileInfo::exists(destPath)) {
+        if (dir.rename(sourcePath, destPath))
+            return true;
+
+        // rename() fails across volumes/mount points; fall back to copy+delete.
+        if (cancelled() || !copyRecursively(sourcePath, destPath, done, total))
+            return false;
+
+        const QFileInfo sourceInfo(sourcePath);
+        return sourceInfo.isDir() ? QDir(sourcePath).removeRecursively() : QFile::remove(sourcePath);
     }
 
-    QDir dir;
-    if (dir.rename(sourcePath, destPath))
-        return true;
+    // Overwriting an existing destination: move/copy the source into a
+    // scratch path next to it first, and only swap that into place once
+    // it's fully there (see replaceWithBackup()). The previous approach --
+    // delete destPath, *then* try to (re)create it -- meant any failure in
+    // between (a full disk, a permissions error, an AV lock, a cross-volume
+    // copy that dies partway through, ...) destroyed the destination's
+    // existing content for nothing, with no way back. This way the
+    // original survives any failure short of the final on-disk swap
+    // itself, and the source is only ever removed once the replacement has
+    // actually landed.
+    const QString tempDest = temporarySiblingPath(destPath);
+    const bool sourceAlreadyMoved = dir.rename(sourcePath, tempDest);
+    const bool haveReplacement =
+        sourceAlreadyMoved || (!cancelled() && copyRecursively(sourcePath, tempDest, done, total));
 
-    // rename() fails across volumes/mount points; fall back to copy+delete.
-    if (cancelled() || !copyRecursively(sourcePath, destPath, done, total, overwrite))
+    if (!haveReplacement) {
+        removeTempDebris(tempDest);
         return false;
+    }
 
-    const QFileInfo sourceInfo(sourcePath);
-    return sourceInfo.isDir() ? QDir(sourcePath).removeRecursively() : QFile::remove(sourcePath);
+    if (!replaceWithBackup(destPath, tempDest)) {
+        // Couldn't swap the replacement in -- put it back where it came
+        // from instead of leaving it orphaned under a temp name.
+        if (sourceAlreadyMoved)
+            dir.rename(tempDest, sourcePath);
+        else
+            removeTempDebris(tempDest);
+        return false;
+    }
+
+    if (!sourceAlreadyMoved) {
+        const QFileInfo sourceInfo(sourcePath);
+        sourceInfo.isDir() ? QDir(sourcePath).removeRecursively() : QFile::remove(sourcePath);
+    }
+    return true;
 }
 
 FileOpTask::ConflictChoice FileOpTask::askConflictResolution(const QString &sourcePath, const QString &destPath)

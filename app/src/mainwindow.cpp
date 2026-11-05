@@ -19,6 +19,8 @@
 #include <QCloseEvent>
 #include <QCoreApplication>
 #include <QDockWidget>
+#include <QInputDialog>
+#include <QLineEdit>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
@@ -29,7 +31,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
-    setWindowTitle(tr("lvdExplorer"));
+    setCurrentSessionName(QString());
     resize(1200, 800);
 
     m_grid = new PaneGridWidget(this);
@@ -42,13 +44,19 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(qApp, &QApplication::focusChanged, this, &MainWindow::trackFocusedPane);
 
-    // Restore the autosaved session on launch unless the user asked for a
-    // blank start (--new-session)
+    // Restore whichever named session was last active on launch, unless
+    // the user asked for a blank start (--new-session). Session saving is
+    // manual only (Save Session/Save Current As...) -- this just reopens
+    // that same named session's own last explicitly-saved content, not an
+    // automatic snapshot of how things looked at the previous close.
     const bool startBlank = QCoreApplication::arguments().contains(QStringLiteral("--new-session"));
     if (!startBlank) {
+        const QString lastName = SessionManager::lastSessionName();
         SessionData data;
-        if (SessionManager::load(SessionManager::kAutosaveSessionName, data))
+        if (!lastName.isEmpty() && SessionManager::load(lastName, data)) {
             applySession(data);
+            setCurrentSessionName(lastName);
+        }
     }
 
     // Focus hasn't settled anywhere yet at construction time, so the first
@@ -67,18 +75,11 @@ MainWindow::MainWindow(QWidget *parent)
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-    const QMessageBox::StandardButton choice = QMessageBox::question(
-        this, tr("Save Session"),
-        tr("Save the current window layout and open tabs, so they're restored the next time lvdExplorer starts?"),
-        QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel, QMessageBox::Yes);
-
-    if (choice == QMessageBox::Cancel) {
-        event->ignore();
-        return;
-    }
-    if (choice == QMessageBox::Yes)
-        SessionManager::save(SessionManager::kAutosaveSessionName, captureSession());
-
+    // Saving is manual only (Save Session/Save Current As...) -- closing
+    // never saves (or asks to save) window/pane state. The only thing
+    // remembered here is *which* named session was active, if any, purely
+    // so the next launch reopens that same session by name.
+    SessionManager::setLastSessionName(m_currentSessionName);
     QMainWindow::closeEvent(event);
 }
 
@@ -186,10 +187,16 @@ void MainWindow::setupMenus()
     QAction *compareFoldersAction = new QAction(IconFactory::compareFolders(), tr("&Compare Folders..."), this);
     connect(compareFoldersAction, &QAction::triggered, this, &MainWindow::openFolderCompare);
 
-    QAction *manageSessions = new QAction(IconFactory::sessions(), tr("&Sessions..."), this);
-    ShortcutManager::instance().registerAction(manageSessions, QStringLiteral("app.sessions"), tr("Sessions"),
+    m_manageSessionsAction = new QAction(IconFactory::sessions(), tr("&Sessions..."), this);
+    ShortcutManager::instance().registerAction(m_manageSessionsAction, QStringLiteral("app.sessions"), tr("Sessions"),
                                                 QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_S));
-    connect(manageSessions, &QAction::triggered, this, &MainWindow::openSessionManager);
+    connect(m_manageSessionsAction, &QAction::triggered, this, &MainWindow::openSessionManager);
+
+    QAction *saveSessionAction = new QAction(tr("Sa&ve Session"), this);
+    connect(saveSessionAction, &QAction::triggered, this, &MainWindow::saveSession);
+
+    QAction *saveSessionAsAction = new QAction(tr("Save Current &As..."), this);
+    connect(saveSessionAsAction, &QAction::triggered, this, &MainWindow::saveSessionAs);
 
     QAction *shortcutsAction = new QAction(tr("&Keyboard Shortcuts..."), this);
     connect(shortcutsAction, &QAction::triggered, this, [this] {
@@ -245,7 +252,7 @@ void MainWindow::setupMenus()
     toolBar->addAction(findFilesAction);
     toolBar->addAction(bookmarksAction);
     toolBar->addAction(compareFoldersAction);
-    toolBar->addAction(manageSessions);
+    toolBar->addAction(m_manageSessionsAction);
 
     QMenu *toolsMenu = menuBar()->addMenu(tr("&Tools"));
     toolsMenu->addAction(findFilesAction);
@@ -291,8 +298,12 @@ void MainWindow::setupMenus()
         break;
     }
 
-    QMenu *sessionMenu = menuBar()->addMenu(tr("&Session"));
-    sessionMenu->addAction(manageSessions);
+    m_sessionMenu = menuBar()->addMenu(tr("&Session"));
+    m_sessionMenu->addAction(saveSessionAction);
+    m_sessionMenu->addAction(saveSessionAsAction);
+    m_sessionMenu->addSeparator();
+    m_sessionMenu->addAction(m_manageSessionsAction);
+    rebuildRecentSessionsMenu();
 
     QMenu *helpMenu = menuBar()->addMenu(tr("&Help"));
     QAction *aboutAction = helpMenu->addAction(tr("&About lvdExplorer..."));
@@ -307,19 +318,82 @@ void MainWindow::openSessionManager()
     auto *dialog = new SessionManagerDialog(this);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
 
-    connect(dialog, &SessionManagerDialog::saveRequested, this, [this](const QString &name) {
-        if (!SessionManager::save(name, captureSession()))
-            QMessageBox::warning(this, tr("lvdExplorer"), tr("Could not save session “%1”.").arg(name));
-    });
-    connect(dialog, &SessionManagerDialog::loadRequested, this, [this](const QString &name) {
-        SessionData data;
-        if (SessionManager::load(name, data))
-            applySession(data);
-        else
-            QMessageBox::warning(this, tr("lvdExplorer"), tr("Could not load session “%1”.").arg(name));
-    });
+    connect(dialog, &SessionManagerDialog::saveRequested, this, [this](const QString &name) { saveSessionNamed(name); });
+    connect(dialog, &SessionManagerDialog::loadRequested, this, [this](const QString &name) { loadSessionNamed(name); });
 
     dialog->exec();
+
+    // Covers a deletion too (the dialog has no separate signal for that):
+    // the recent list may have dropped an entry, and if the deleted
+    // session was the active one, its name no longer refers to anything.
+    if (!m_currentSessionName.isEmpty() && !SessionManager::exists(m_currentSessionName))
+        setCurrentSessionName(QString());
+    rebuildRecentSessionsMenu();
+}
+
+void MainWindow::loadSessionNamed(const QString &name)
+{
+    SessionData data;
+    if (!SessionManager::load(name, data)) {
+        QMessageBox::warning(this, tr("lvdExplorer"), tr("Could not load session “%1”.").arg(name));
+        return;
+    }
+    applySession(data);
+    SessionManager::noteSessionUsed(name);
+    setCurrentSessionName(name);
+    rebuildRecentSessionsMenu();
+}
+
+void MainWindow::saveSessionNamed(const QString &name)
+{
+    if (!SessionManager::save(name, captureSession())) {
+        QMessageBox::warning(this, tr("lvdExplorer"), tr("Could not save session “%1”.").arg(name));
+        return;
+    }
+    SessionManager::noteSessionUsed(name);
+    setCurrentSessionName(name);
+    rebuildRecentSessionsMenu();
+}
+
+void MainWindow::saveSession()
+{
+    if (m_currentSessionName.isEmpty()) {
+        saveSessionAs();
+        return;
+    }
+    saveSessionNamed(m_currentSessionName);
+}
+
+void MainWindow::saveSessionAs()
+{
+    bool ok = false;
+    const QString name = QInputDialog::getText(this, tr("Save Session"), tr("Session name:"), QLineEdit::Normal,
+                                                 m_currentSessionName, &ok);
+    if (!ok || name.trimmed().isEmpty())
+        return;
+    saveSessionNamed(name.trimmed());
+}
+
+void MainWindow::setCurrentSessionName(const QString &name)
+{
+    m_currentSessionName = name;
+    setWindowTitle(name.isEmpty() ? tr("lvdExplorer") : tr("%1 - lvdExplorer").arg(name));
+}
+
+void MainWindow::rebuildRecentSessionsMenu()
+{
+    const QList<QAction *> oldActions = m_recentSessionActions;
+    for (QAction *action : oldActions)
+        m_sessionMenu->removeAction(action);
+    qDeleteAll(m_recentSessionActions);
+    m_recentSessionActions.clear();
+
+    for (const QString &name : SessionManager::recentSessionNames()) {
+        auto *action = new QAction(name, m_sessionMenu);
+        connect(action, &QAction::triggered, this, [this, name] { loadSessionNamed(name); });
+        m_sessionMenu->insertAction(m_manageSessionsAction, action);
+        m_recentSessionActions.append(action);
+    }
 }
 
 SessionData MainWindow::captureSession() const

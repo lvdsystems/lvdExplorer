@@ -25,6 +25,8 @@ private slots:
     void conflictingCopyOverwritesWhenUserChoosesOverwrite();
     void conflictingCopySkipsWhenUserChoosesSkip();
     void overwriteReplacesReadOnlyDestinationFile();
+    void failedOverwriteCopyPreservesDestination();
+    void failedOverwriteMovePreservesDestination();
 
 private:
     void writeContent(const QString &path, const QByteArray &content);
@@ -295,6 +297,76 @@ void OpsEngineTest::conflictingCopySkipsWhenUserChoosesSkip()
     // show up in the "some items could not be processed" list.
     const QStringList failed = finishedSpy.first().at(1).toStringList();
     QVERIFY(failed.isEmpty());
+
+    QFile destFile(dest);
+    QVERIFY(destFile.open(QIODevice::ReadOnly));
+    QCOMPARE(destFile.readAll(), QByteArrayLiteral("old content"));
+}
+
+void OpsEngineTest::failedOverwriteCopyPreservesDestination()
+{
+    // Regression test: overwriting an existing destination used to delete
+    // it *before* attempting the replacement copy, so a copy failure for
+    // any reason (full disk, permissions, an AV lock, ...) destroyed the
+    // destination's original content for nothing. Here the source path is
+    // never actually created, so the copy is guaranteed to fail -- the old
+    // destination must still be exactly as it was.
+    QTemporaryDir srcDir, dstDir;
+    QVERIFY(srcDir.isValid() && dstDir.isValid());
+    const QString source = QDir(srcDir.path()).filePath(QStringLiteral("a.txt")); // never created
+    const QString dest = QDir(dstDir.path()).filePath(QStringLiteral("a.txt"));
+    writeContent(dest, QByteArrayLiteral("old content"));
+
+    FileOpRequest request;
+    request.kind = FileOpKind::Copy;
+    request.sourcePaths = {source};
+    request.destDir = dstDir.path();
+
+    FileOpHandle *handle = OpsEngine::instance().submit(request);
+    QVERIFY(handle);
+
+    answerNextConflictDialog(QMessageBox::AcceptRole, /*checkApplyToAll=*/false);
+
+    QSignalSpy finishedSpy(handle, &FileOpHandle::finished);
+    QVERIFY(finishedSpy.wait(5000));
+
+    // The doomed-to-fail copy must be reported as failed...
+    const QStringList failed = finishedSpy.first().at(1).toStringList();
+    QCOMPARE(failed, QStringList{QStringLiteral("a.txt")});
+
+    // ...but the pre-existing destination must survive untouched.
+    QFile destFile(dest);
+    QVERIFY(destFile.open(QIODevice::ReadOnly));
+    QCOMPARE(destFile.readAll(), QByteArrayLiteral("old content"));
+}
+
+void OpsEngineTest::failedOverwriteMovePreservesDestination()
+{
+    // Same regression as failedOverwriteCopyPreservesDestination(), for a
+    // Move (Cut + Paste): FileOpTask::moveOne() took the same
+    // delete-then-recreate shortcut for an overwritten destination. A
+    // never-created source guarantees the replacement fails.
+    QTemporaryDir srcDir, dstDir;
+    QVERIFY(srcDir.isValid() && dstDir.isValid());
+    const QString source = QDir(srcDir.path()).filePath(QStringLiteral("a.txt")); // never created
+    const QString dest = QDir(dstDir.path()).filePath(QStringLiteral("a.txt"));
+    writeContent(dest, QByteArrayLiteral("old content"));
+
+    FileOpRequest request;
+    request.kind = FileOpKind::Move;
+    request.sourcePaths = {source};
+    request.destDir = dstDir.path();
+
+    FileOpHandle *handle = OpsEngine::instance().submit(request);
+    QVERIFY(handle);
+
+    answerNextConflictDialog(QMessageBox::AcceptRole, /*checkApplyToAll=*/false);
+
+    QSignalSpy finishedSpy(handle, &FileOpHandle::finished);
+    QVERIFY(finishedSpy.wait(5000));
+
+    const QStringList failed = finishedSpy.first().at(1).toStringList();
+    QCOMPARE(failed, QStringList{QStringLiteral("a.txt")});
 
     QFile destFile(dest);
     QVERIFY(destFile.open(QIODevice::ReadOnly));
